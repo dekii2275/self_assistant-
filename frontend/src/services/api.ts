@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Task, TaskCreateInput, TaskUpdateInput, Subtask } from '../types/task';
+import type { Task, TaskCreateInput, TaskUpdateInput, Subtask, Goal } from '../types/task';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8974/api/v1';
 
@@ -74,5 +74,26 @@ export const taskApi = {
   async checkHealth(): Promise<{ status: string; database: string }> {
     const res = await apiClient.get<{ status: string; database: string }>('/health');
     return res.data;
+  },
+};
+
+export const goalApi = {
+  async getGoals(): Promise<Goal[]> {
+    const res = await apiClient.get<Goal[]>('/goals');
+    return res.data;
+  },
+
+  async createGoal(title: string): Promise<Goal> {
+    const res = await apiClient.post<Goal>('/goals', { title });
+    return res.data;
+  },
+
+  async toggleGoal(id: number): Promise<Goal> {
+    const res = await apiClient.patch<Goal>(`/goals/${id}/toggle`);
+    return res.data;
+  },
+
+  async deleteGoal(id: number): Promise<void> {
+    await apiClient.delete(`/goals/${id}`);
   },
 };

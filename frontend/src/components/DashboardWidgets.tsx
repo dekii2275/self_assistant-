@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,8 +8,11 @@ import {
   Smartphone,
   Megaphone,
   Users,
+  Plus,
+  Trash2,
 } from 'lucide-react';
-import type { Task } from '../types/task';
+import type { Task, Goal } from '../types/task';
+import { goalApi } from '../services/api';
 
 // -------------------------------------------------------------
 // 1. Mini Month Calendar Widget
@@ -122,48 +125,82 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 };
 
 // -------------------------------------------------------------
-// 2. Daily Habits & Goals Widget
+// 2. Real Backend-Connected Daily Goals Widget (Zero Mock Data)
 // -------------------------------------------------------------
-export const DailyGoalsWidget: React.FC<{ tasksCount: { done: number; total: number } }> = () => {
-  const [goals, setGoals] = useState([
-    { id: 1, title: 'Hoàn thành việc quan trọng', completed: true },
-    { id: 2, title: 'Tập trung tối thiểu 3h', completed: true },
-    { id: 3, title: 'Vận động thể thao 30p', completed: false },
-    { id: 4, title: 'Đọc sách trước khi ngủ', completed: false },
-  ]);
+export const DailyGoalsWidget: React.FC = () => {
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('otter_daily_goals');
-    if (saved) {
-      try {
-        setGoals(JSON.parse(saved));
-      } catch {
-        // fallback
-      }
+  const fetchGoals = async () => {
+    try {
+      const data = await goalApi.getGoals();
+      setGoals(data);
+    } catch (err) {
+      console.error('Error fetching goals:', err);
     }
-  }, []);
-
-  const toggleGoal = (id: number) => {
-    setGoals((prev) => {
-      const next = prev.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g));
-      localStorage.setItem('otter_daily_goals', JSON.stringify(next));
-      return next;
-    });
   };
 
-  const doneCount = goals.filter((g) => g.completed).length;
-  const progressPercent = Math.round((doneCount / goals.length) * 100);
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  const handleToggle = async (id: number) => {
+    setGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, is_completed: !g.is_completed } : g))
+    );
+    try {
+      const updated = await goalApi.toggleGoal(id);
+      setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    } catch {
+      await fetchGoals();
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoalTitle.trim()) return;
+    try {
+      const created = await goalApi.createGoal(newGoalTitle.trim());
+      setGoals((prev) => [...prev, created]);
+      setNewGoalTitle('');
+      setIsAdding(false);
+    } catch (err) {
+      console.error('Error creating goal:', err);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    setGoals((prev) => prev.filter((g) => g.id !== id));
+    try {
+      await goalApi.deleteGoal(id);
+    } catch {
+      await fetchGoals();
+    }
+  };
+
+  const doneCount = goals.filter((g) => g.is_completed).length;
+  const progressPercent = goals.length > 0 ? Math.round((doneCount / goals.length) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2">
+    <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-black text-[#1b3826] flex items-center gap-1.5">
           <Target className="w-3.5 h-3.5 text-emerald-600" />
           <span>Mục tiêu hôm nay</span>
         </h3>
-        <span className="text-[11px] font-black text-emerald-800">
-          {doneCount}/{goals.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-black text-emerald-800">
+            {doneCount}/{goals.length}
+          </span>
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className="p-1 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors"
+            title="Thêm mục tiêu"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -174,36 +211,81 @@ export const DailyGoalsWidget: React.FC<{ tasksCount: { done: number; total: num
         />
       </div>
 
-      {/* Goals Checklist */}
-      <div className="space-y-1.5 pt-0.5">
-        {goals.map((goal) => (
-          <label
-            key={goal.id}
-            onClick={() => toggleGoal(goal.id)}
-            className="flex items-center gap-2 text-xs font-medium text-[#1f3f2a] cursor-pointer select-none group"
+      {/* Add Goal Input */}
+      {isAdding && (
+        <form onSubmit={handleCreate} className="flex items-center gap-1.5 pt-1">
+          <input
+            type="text"
+            value={newGoalTitle}
+            onChange={(e) => setNewGoalTitle(e.target.value)}
+            placeholder="Nhập mục tiêu mới..."
+            autoFocus
+            className="flex-1 px-2.5 py-1 text-xs border border-emerald-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 bg-[#f9fbf9]"
+          />
+          <button
+            type="submit"
+            className="px-2 py-1 text-[11px] font-bold bg-[#265035] text-white rounded-lg hover:bg-[#1a3825]"
           >
+            Lưu
+          </button>
+        </form>
+      )}
+
+      {/* Goals Checklist */}
+      <div className="space-y-1.5 pt-0.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
+        {goals.length === 0 ? (
+          <div className="py-4 text-center text-[11px] text-[#638a6e]">
+            <p>Chưa có mục tiêu ngày.</p>
+            <button
+              onClick={() => setIsAdding(true)}
+              className="mt-1 font-bold text-emerald-800 hover:underline"
+            >
+              + Thêm mục tiêu ngay
+            </button>
+          </div>
+        ) : (
+          goals.map((goal) => (
             <div
-              className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all shrink-0 ${
-                goal.completed
-                  ? 'bg-emerald-600 border-emerald-600 text-white'
-                  : 'border-emerald-300 bg-white group-hover:border-emerald-600'
-              }`}
+              key={goal.id}
+              className="flex items-center justify-between gap-1.5 group select-none text-xs"
             >
-              {goal.completed && (
-                <svg className="w-2.5 h-2.5 fill-none stroke-current stroke-[3]" viewBox="0 0 24 24">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              )}
+              <label
+                onClick={() => handleToggle(goal.id)}
+                className="flex items-center gap-2 font-medium text-[#1f3f2a] cursor-pointer flex-1 min-w-0"
+              >
+                <div
+                  className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all shrink-0 ${
+                    goal.is_completed
+                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                      : 'border-emerald-300 bg-white group-hover:border-emerald-600'
+                  }`}
+                >
+                  {goal.is_completed && (
+                    <svg className="w-2.5 h-2.5 fill-none stroke-current stroke-[3]" viewBox="0 0 24 24">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  )}
+                </div>
+                <span
+                  className={`truncate leading-snug ${
+                    goal.is_completed ? 'line-through text-[#6d9478]' : 'text-[#1b3826]'
+                  }`}
+                >
+                  {goal.title}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => handleDelete(goal.id)}
+                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity"
+                title="Xóa mục tiêu"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
             </div>
-            <span
-              className={`truncate leading-snug ${
-                goal.completed ? 'line-through text-[#6d9478]' : 'text-[#1b3826]'
-              }`}
-            >
-              {goal.title}
-            </span>
-          </label>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
@@ -258,94 +340,117 @@ export const OtterAssistantCard: React.FC<OtterAssistantCardProps> = ({
 };
 
 // -------------------------------------------------------------
-// 4. Active Projects Widget
+// 4. Real Projects Widget (Derived Directly From Backend Tasks)
 // -------------------------------------------------------------
-export const ActiveProjectsWidget: React.FC<{ onSelectProjectTag: (tag: string) => void }> = ({
-  onSelectProjectTag,
-}) => {
-  const projects = [
-    {
-      id: 1,
-      name: 'Website mới',
-      tag: 'website',
-      icon: Laptop,
-      iconColor: 'text-emerald-700 bg-emerald-100',
-      progress: 70,
-      tasks: '12/18',
-      barColor: 'from-emerald-500 to-teal-500',
-    },
-    {
-      id: 2,
-      name: 'Ứng dụng di động',
-      tag: 'mobile',
-      icon: Smartphone,
-      iconColor: 'text-purple-700 bg-purple-100',
-      progress: 40,
-      tasks: '8/20',
-      barColor: 'from-purple-500 to-indigo-500',
-    },
-    {
-      id: 3,
-      name: 'Marketing Q1',
-      tag: 'marketing',
-      icon: Megaphone,
-      iconColor: 'text-amber-700 bg-amber-100',
-      progress: 60,
-      tasks: '6/10',
-      barColor: 'from-amber-500 to-orange-500',
-    },
-  ];
+export const ActiveProjectsWidget: React.FC<{
+  tasks: Task[];
+  onSelectProjectTag: (tag: string) => void;
+}> = ({ tasks, onSelectProjectTag }) => {
+  // Compute real projects dynamically from tasks' tags
+  const projects = useMemo(() => {
+    const tagMap = new Map<string, { total: number; done: number }>();
+
+    tasks.forEach((t) => {
+      if (!t.tags) return;
+      const splitTags = t.tags
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      splitTags.forEach((tag) => {
+        const cur = tagMap.get(tag) || { total: 0, done: 0 };
+        cur.total += 1;
+        if (t.is_completed) cur.done += 1;
+        tagMap.set(tag, cur);
+      });
+    });
+
+    const icons = [Laptop, Smartphone, Megaphone];
+    const colors = [
+      { color: 'text-emerald-700 bg-emerald-100', bar: 'from-emerald-500 to-teal-500' },
+      { color: 'text-purple-700 bg-purple-100', bar: 'from-purple-500 to-indigo-500' },
+      { color: 'text-amber-700 bg-amber-100', bar: 'from-amber-500 to-orange-500' },
+    ];
+
+    return Array.from(tagMap.entries()).map(([tag, stat], idx) => {
+      const progress = stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
+      const chosenIcon = icons[idx % icons.length];
+      const chosenColor = colors[idx % colors.length];
+
+      return {
+        id: tag,
+        name: tag.charAt(0).toUpperCase() + tag.slice(1),
+        tag,
+        icon: chosenIcon,
+        iconColor: chosenColor.color,
+        barColor: chosenColor.bar,
+        progress,
+        tasks: `${stat.done}/${stat.total}`,
+      };
+    });
+  }, [tasks]);
 
   return (
     <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-black text-[#1b3826] flex items-center gap-1.5">
-          <span>📁 Dự án đang làm</span>
+          <span>📁 Dự án từ thẻ nhãn</span>
         </h3>
-        <button
-          onClick={() => onSelectProjectTag('all')}
-          className="text-[11px] font-bold text-[#3d6e4b] hover:underline flex items-center gap-0.5"
-        >
-          <span>Xem hết</span>
-          <ArrowRight className="w-2.5 h-2.5" />
-        </button>
+        {projects.length > 0 && (
+          <button
+            onClick={() => onSelectProjectTag('all')}
+            className="text-[11px] font-bold text-[#3d6e4b] hover:underline flex items-center gap-0.5"
+          >
+            <span>Xem hết</span>
+            <ArrowRight className="w-2.5 h-2.5" />
+          </button>
+        )}
       </div>
 
       <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
-        {projects.map((proj) => {
-          const Icon = proj.icon;
-          return (
-            <div
-              key={proj.id}
-              onClick={() => onSelectProjectTag(proj.tag)}
-              className="p-2 rounded-xl border border-[#e5efe5] hover:border-emerald-300 hover:bg-[#fafcfa] transition-all cursor-pointer space-y-1.5 select-none"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className={`p-1 rounded-lg ${proj.iconColor}`}>
-                    <Icon className="w-3 h-3" />
+        {projects.length === 0 ? (
+          <div className="py-4 text-center text-[11px] text-[#638a6e] px-2">
+            <p>Chưa có dự án nào.</p>
+            <p className="text-[10px] text-[#7da388] mt-0.5">
+              Gắn thẻ nhãn (vd: <span className="font-mono font-bold">#du-an</span>, <span className="font-mono font-bold">#website</span>) vào công việc để tự động theo dõi dự án!
+            </p>
+          </div>
+        ) : (
+          projects.map((proj) => {
+            const Icon = proj.icon;
+            return (
+              <div
+                key={proj.id}
+                onClick={() => onSelectProjectTag(proj.tag)}
+                className="p-2 rounded-xl border border-[#e5efe5] hover:border-emerald-300 hover:bg-[#fafcfa] transition-all cursor-pointer space-y-1.5 select-none"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`p-1 rounded-lg ${proj.iconColor}`}>
+                      <Icon className="w-3 h-3" />
+                    </div>
+                    <span className="text-xs font-bold text-[#1b3826] truncate">{proj.name}</span>
                   </div>
-                  <span className="text-xs font-bold text-[#1b3826] truncate">{proj.name}</span>
+                  <span className="text-[10px] font-extrabold text-[#456d50]">{proj.progress}%</span>
                 </div>
-                <span className="text-[10px] font-extrabold text-[#456d50]">{proj.progress}%</span>
-              </div>
 
-              <div className="w-full bg-[#ebf4ec] h-1 rounded-full overflow-hidden">
-                <div
-                  className={`bg-gradient-to-r ${proj.barColor} h-full rounded-full transition-all`}
-                  style={{ width: `${proj.progress}%` }}
-                />
-              </div>
+                <div className="w-full bg-[#ebf4ec] h-1 rounded-full overflow-hidden">
+                  <div
+                    className={`bg-gradient-to-r ${proj.barColor} h-full rounded-full transition-all`}
+                    style={{ width: `${proj.progress}%` }}
+                  />
+                </div>
 
-              <div className="flex items-center justify-between text-[10px] text-[#558163]">
-                <span>📋 {proj.tasks} việc</span>
-                <span className="flex items-center gap-1 bg-[#f2f7f2] px-1.5 py-0.2 rounded-full font-bold">
-                  <Users className="w-2.5 h-2.5" /> Team
-                </span>
+                <div className="flex items-center justify-between text-[10px] text-[#558163]">
+                  <span>📋 {proj.tasks} việc</span>
+                  <span className="flex items-center gap-1 bg-[#f2f7f2] px-1.5 py-0.2 rounded-full font-bold">
+                    <Users className="w-2.5 h-2.5" /> Dự án
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

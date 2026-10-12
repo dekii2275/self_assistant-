@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -14,6 +14,7 @@ import {
   Dumbbell,
   Calendar,
   Menu,
+  Edit2,
 } from 'lucide-react';
 import {
   MonthCalendar,
@@ -49,6 +50,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onOpenMobileMenu,
 }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'done'>('all');
+  const [userName, setUserName] = useState(() => localStorage.getItem('otter_user_name') || 'Bạn');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(userName);
+
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Today's tasks (or filtered by selected calendar date if clicked)
@@ -67,14 +72,53 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     return true;
   });
 
-  // Actual minutes sum
+  // Real minutes sum from PostgreSQL tasks
   const totalMinutesSpent = tasks.reduce((acc, t) => acc + (t.actual_minutes || 0), 0);
   const hours = Math.floor(totalMinutesSpent / 60);
   const mins = totalMinutesSpent % 60;
-  const timeDisplay = totalMinutesSpent > 0 ? `${hours}h ${mins}m` : '3h 20m';
+  const timeDisplay = `${hours}h ${mins}m`;
+
+  // Real productivity streak calculated from completed tasks
+  const streakDays = useMemo(() => {
+    const completedDates = new Set(
+      tasks
+        .filter((t) => t.is_completed)
+        .map((t) => (t.updated_at || t.created_at || '').split('T')[0])
+        .filter(Boolean)
+    );
+
+    let count = 0;
+    const checkDate = new Date();
+    while (true) {
+      const dateKey = checkDate.toISOString().split('T')[0];
+      if (completedDates.has(dateKey)) {
+        count++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        if (count === 0) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const yesterdayKey = checkDate.toISOString().split('T')[0];
+          if (completedDates.has(yesterdayKey)) {
+            count++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+          }
+        }
+        break;
+      }
+    }
+    return count;
+  }, [tasks]);
 
   // Urgent count for Otter assistant card
   const urgentCount = tasks.filter((t) => !t.is_completed && t.priority === 'p1').length;
+
+  const handleSaveName = () => {
+    const trimmed = tempName.trim() || 'Bạn';
+    setUserName(trimmed);
+    localStorage.setItem('otter_user_name', trimmed);
+    setIsEditingName(false);
+  };
 
   const priorityMeta: Record<Priority, { label: string; class: string }> = {
     p1: { label: 'P1', class: 'bg-rose-50 text-rose-700 border-rose-200' },
@@ -105,6 +149,13 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     }
     return <Calendar className="w-3 h-3 text-slate-500" />;
   };
+
+  const todayFormatted = new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  }).format(new Date());
 
   return (
     <div className="h-full flex flex-col overflow-hidden gap-2.5">
@@ -140,14 +191,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
         {/* Date, Streak, Bell, User Profile, Quick Add */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-[#2d5639] bg-white border border-[#d8e8d9] px-2.5 py-1 rounded-full shadow-2xs">
+          <div className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-[#2d5639] bg-white border border-[#d8e8d9] px-2.5 py-1 rounded-full shadow-2xs capitalize">
             <span>🌿</span>
-            <span>Thứ Ba, 13/10/2026</span>
+            <span>{todayFormatted}</span>
           </div>
 
           <div className="flex items-center gap-1 text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full shadow-2xs">
             <span>🔥</span>
-            <span>12 ngày</span>
+            <span>{streakDays} ngày</span>
           </div>
 
           <button className="relative p-1.5 rounded-full bg-white border border-[#d8e8d9] text-[#2d5639] hover:bg-[#edf5ee] shadow-2xs transition-colors">
@@ -163,6 +214,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <span>Thêm việc</span>
           </button>
 
+          {/* User Profile */}
           <div className="flex items-center gap-1.5 pl-1">
             <div className="w-7 h-7 rounded-full overflow-hidden bg-emerald-100 ring-2 ring-emerald-300 shrink-0">
               <img
@@ -171,9 +223,38 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            <span className="text-xs font-bold text-[#173321] hidden md:inline">
-              Minh Anh
-            </span>
+            {isEditingName ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                  className="w-20 px-1.5 py-0.5 text-xs border border-emerald-300 rounded outline-none"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveName}
+                  className="text-[10px] text-emerald-800 font-bold hover:underline"
+                >
+                  Lưu
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => {
+                  setTempName(userName);
+                  setIsEditingName(true);
+                }}
+                className="flex items-center gap-1 cursor-pointer group"
+                title="Bấm để đổi tên hiển thị"
+              >
+                <span className="text-xs font-bold text-[#173321] hidden md:inline">
+                  {userName}
+                </span>
+                <Edit2 className="w-2.5 h-2.5 text-slate-400 group-hover:text-emerald-700 hidden md:inline" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -192,7 +273,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-black text-[#14321d] leading-tight">
-              Xin chào! Hôm nay bạn muốn hoàn thành gì? 🍃
+              Xin chào {userName}! Hôm nay bạn muốn hoàn thành gì? 🍃
             </h2>
             <p className="text-[10px] text-[#416f4d] font-medium leading-tight hidden sm:block">
               "Work Flow Grow" — Từng bước nhỏ mỗi ngày tạo nên hành trình lớn
@@ -200,7 +281,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
 
-        {/* 3 Compact Stat Badges */}
+        {/* 3 Compact Real Stat Badges */}
         <div className="flex items-center gap-2 self-stretch md:self-auto justify-between md:justify-end">
           {/* Stat 1: Completed */}
           <div className="bg-white/90 border border-emerald-200/80 px-2 py-0.5 rounded-xl shadow-2xs flex items-center gap-1.5">
@@ -210,7 +291,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div>
               <p className="text-[9px] font-bold text-[#568164] uppercase leading-none">Hoàn thành</p>
               <p className="text-xs font-black text-[#14321d] leading-tight">
-                {completedToday}/{totalToday > 0 ? totalToday : 8}
+                {completedToday}/{totalToday}
               </p>
             </div>
           </div>
@@ -393,10 +474,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         {/* ========================================================= */}
         <div className="col-span-12 lg:col-span-3 h-full flex flex-col gap-2.5 min-h-0 overflow-hidden">
           {/* Top: Daily Goals Widget */}
-          <DailyGoalsWidget tasksCount={{ done: completedToday, total: totalToday }} />
+          <DailyGoalsWidget />
 
           {/* Bottom: Active Projects Widget */}
-          <ActiveProjectsWidget onSelectProjectTag={() => onViewAllTasks()} />
+          <ActiveProjectsWidget tasks={tasks} onSelectProjectTag={() => onViewAllTasks()} />
         </div>
       </div>
     </div>

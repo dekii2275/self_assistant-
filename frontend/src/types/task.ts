@@ -52,3 +52,14 @@ export interface TaskUpdateInput {
   recurrence_rule?: RecurrenceRule | null;
   tags?: string;
 }
+
+export interface Goal {
+  id: number;
+  title: string;
+  is_completed: boolean;
+  created_at: string;
+}
+
+export interface GoalCreateInput {
+  title: string;
+}
