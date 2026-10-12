@@ -11,7 +11,8 @@ import {
   Tag,
   AlignLeft,
 } from 'lucide-react';
-import type { Priority, TaskCreateInput } from '../types/task';
+import type { Priority, TaskCreateInput, RecurrenceRule } from '../types/task';
+import { Repeat } from 'lucide-react';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   const [priority, setPriority] = useState<Priority>(defaultPriority);
   const [dueDate, setDueDate] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | ''>('');
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | ''>('');
   const [tags, setTags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,6 +65,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         priority,
         due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
         estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : undefined,
+        recurrence_rule: (recurrenceRule as RecurrenceRule) || null,
         tags: tags.trim() || undefined,
         status: 'todo',
       });
@@ -272,6 +275,24 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                       ))}
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-800/60 flex items-center gap-1">
+                    <Repeat className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Lặp lại</span>
+                  </label>
+                  <select
+                    value={recurrenceRule}
+                    onChange={(e) => setRecurrenceRule(e.target.value as RecurrenceRule | '')}
+                    className="w-full text-xs font-semibold text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl px-2.5 py-2 outline-none focus:bg-white focus:border-emerald-500"
+                  >
+                    <option value="">Không lặp lại</option>
+                    <option value="daily">Mỗi ngày</option>
+                    <option value="weekdays">Thứ 2 - Thứ 6</option>
+                    <option value="weekly">Mỗi tuần</option>
+                    <option value="monthly">Mỗi tháng</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1.5">

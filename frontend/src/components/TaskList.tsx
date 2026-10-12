@@ -10,6 +10,7 @@ interface TaskListProps {
   onDelete: (id: number) => Promise<void>;
   onEdit: (task: Task) => void;
   onOpenNewTaskModal: () => void;
+  onStartPomodoro?: (task: Task) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -19,6 +20,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   onDelete,
   onEdit,
   onOpenNewTaskModal,
+  onStartPomodoro,
 }) => {
   const [showCompletedSection, setShowCompletedSection] = useState(false);
 
@@ -88,6 +90,7 @@ export const TaskList: React.FC<TaskListProps> = ({
             onToggle={onToggle}
             onDelete={onDelete}
             onEdit={onEdit}
+            onStartPomodoro={onStartPomodoro}
           />
         ))}
       </div>

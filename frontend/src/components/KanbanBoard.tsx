@@ -9,6 +9,7 @@ interface KanbanBoardProps {
   onDelete: (id: number) => Promise<void>;
   onEdit: (task: Task) => void;
   onQuickAddWithPriority: (priority: Priority) => void;
+  onStartPomodoro?: (task: Task) => void;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -17,6 +18,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onDelete,
   onEdit,
   onQuickAddWithPriority,
+  onStartPomodoro,
 }) => {
   const columns: {
     priority: Priority;
@@ -123,6 +125,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onToggle={onToggle}
                     onDelete={onDelete}
                     onEdit={onEdit}
+                    onStartPomodoro={onStartPomodoro}
                   />
                 ))
               )}

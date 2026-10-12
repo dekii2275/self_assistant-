@@ -5,6 +5,11 @@ from app.crud.task import (
     update_task,
     delete_task,
     toggle_task_completion,
+    create_subtask,
+    get_subtask_by_id,
+    toggle_subtask,
+    delete_subtask,
+    log_pomodoro_minutes,
 )
 
 __all__ = [
@@ -14,4 +19,9 @@ __all__ = [
     "update_task",
     "delete_task",
     "toggle_task_completion",
+    "create_subtask",
+    "get_subtask_by_id",
+    "toggle_subtask",
+    "delete_subtask",
+    "log_pomodoro_minutes",
 ]

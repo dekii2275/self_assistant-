@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Task, TaskCreateInput, TaskUpdateInput } from '../types/task';
+import type { Task, TaskCreateInput, TaskUpdateInput, Subtask } from '../types/task';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8974/api/v1';
 
@@ -44,6 +44,31 @@ export const taskApi = {
 
   async deleteTask(id: number): Promise<void> {
     await apiClient.delete(`/tasks/${id}`);
+  },
+
+  // -------------------------------------------------------------
+  // Subtasks API
+  // -------------------------------------------------------------
+  async addSubtask(taskId: number, title: string): Promise<Subtask> {
+    const res = await apiClient.post<Subtask>(`/tasks/${taskId}/subtasks`, { title });
+    return res.data;
+  },
+
+  async toggleSubtask(taskId: number, subtaskId: number): Promise<Subtask> {
+    const res = await apiClient.patch<Subtask>(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`);
+    return res.data;
+  },
+
+  async deleteSubtask(taskId: number, subtaskId: number): Promise<void> {
+    await apiClient.delete(`/tasks/${taskId}/subtasks/${subtaskId}`);
+  },
+
+  // -------------------------------------------------------------
+  // Pomodoro API
+  // -------------------------------------------------------------
+  async logPomodoro(taskId: number, minutes: number = 25): Promise<Task> {
+    const res = await apiClient.post<Task>(`/tasks/${taskId}/pomodoro-log`, { minutes });
+    return res.data;
   },
 
   async checkHealth(): Promise<{ status: string; database: string }> {

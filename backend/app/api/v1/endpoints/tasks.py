@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.crud import task as crud_task
-from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+from app.schemas.task import (
+    TaskCreate,
+    TaskResponse,
+    TaskUpdate,
+    SubtaskCreate,
+    SubtaskResponse,
+    PomodoroLogRequest,
+)
 
 router = APIRouter()
 
@@ -83,3 +90,60 @@ async def delete_task(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy công việc")
     await crud_task.delete_task(db=db, db_task=db_task)
     return None
+
+
+# -------------------------------------------------------------
+# Subtasks Endpoints
+# -------------------------------------------------------------
+
+@router.post("/{task_id}/subtasks", response_model=SubtaskResponse, status_code=status.HTTP_201_CREATED, summary="Thêm checklist con vào task")
+async def add_subtask(
+    task_id: int,
+    subtask_in: SubtaskCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    db_task = await crud_task.get_task_by_id(db=db, task_id=task_id)
+    if not db_task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy công việc cha")
+    return await crud_task.create_subtask(db=db, task_id=task_id, title=subtask_in.title)
+
+
+@router.patch("/{task_id}/subtasks/{subtask_id}/toggle", response_model=SubtaskResponse, summary="Tick checklist con")
+async def toggle_subtask_status(
+    task_id: int,
+    subtask_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    db_subtask = await crud_task.get_subtask_by_id(db=db, subtask_id=subtask_id)
+    if not db_subtask or db_subtask.task_id != task_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy checklist con")
+    return await crud_task.toggle_subtask(db=db, subtask=db_subtask)
+
+
+@router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Xóa checklist con")
+async def delete_subtask_item(
+    task_id: int,
+    subtask_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    db_subtask = await crud_task.get_subtask_by_id(db=db, subtask_id=subtask_id)
+    if not db_subtask or db_subtask.task_id != task_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy checklist con")
+    await crud_task.delete_subtask(db=db, subtask=db_subtask)
+    return None
+
+
+# -------------------------------------------------------------
+# Pomodoro Log Endpoint
+# -------------------------------------------------------------
+
+@router.post("/{task_id}/pomodoro-log", response_model=TaskResponse, summary="Ghi nhận phiên Pomodoro hoàn thành")
+async def log_pomodoro_session(
+    task_id: int,
+    req: PomodoroLogRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    db_task = await crud_task.get_task_by_id(db=db, task_id=task_id)
+    if not db_task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy công việc")
+    return await crud_task.log_pomodoro_minutes(db=db, db_task=db_task, minutes=req.minutes)

@@ -7,11 +7,16 @@ from app.core.config import settings
 from app.core.database import Base, engine
 
 
+from sqlalchemy import text
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Khởi tạo bảng cơ sở dữ liệu nếu chưa tồn tại
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS actual_minutes INTEGER DEFAULT 0 NOT NULL;"))
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence_rule VARCHAR(50);"))
     yield
     await engine.dispose()
 

@@ -1,3 +1,21 @@
-from app.schemas.task import TaskBase, TaskCreate, TaskUpdate, TaskResponse
+from app.schemas.task import (
+    SubtaskBase,
+    SubtaskCreate,
+    SubtaskResponse,
+    TaskBase,
+    TaskCreate,
+    TaskUpdate,
+    TaskResponse,
+    PomodoroLogRequest,
+)
 
-__all__ = ["TaskBase", "TaskCreate", "TaskUpdate", "TaskResponse"]
+__all__ = [
+    "SubtaskBase",
+    "SubtaskCreate",
+    "SubtaskResponse",
+    "TaskBase",
+    "TaskCreate",
+    "TaskUpdate",
+    "TaskResponse",
+    "PomodoroLogRequest",
+]

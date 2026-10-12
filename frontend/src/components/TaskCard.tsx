@@ -7,6 +7,10 @@ import {
   AlertCircle,
   Edit3,
   AlignLeft,
+  ListTodo,
+  Repeat,
+  Timer,
+  Play,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Task, Priority } from '../types/task';
@@ -16,9 +20,16 @@ interface TaskCardProps {
   onToggle: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onEdit: (task: Task) => void;
+  onStartPomodoro?: (task: Task) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onToggle,
+  onDelete,
+  onEdit,
+  onStartPomodoro,
+}) => {
   const priorityStyles: Record<
     Priority,
     { border: string; badge: string; label: string; dot: string }
@@ -51,6 +62,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
 
   const style = priorityStyles[task.priority] || priorityStyles.p3;
 
+  const recurrenceLabels: Record<string, string> = {
+    daily: 'Mỗi ngày',
+    weekdays: 'T2 - T6',
+    weekly: 'Mỗi tuần',
+    monthly: 'Mỗi tháng',
+  };
+
   const formatDueDate = (dateStr?: string | null) => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
@@ -73,10 +91,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
 
   const dueInfo = formatDueDate(task.due_date);
 
+  // Subtask progress
+  const subtasksTotal = task.subtasks?.length || 0;
+  const subtasksCompleted = task.subtasks?.filter((st) => st.is_completed).length || 0;
+  const subtasksPercent =
+    subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
+
   const handleToggleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!task.is_completed) {
-      // Confetti with nature leaf green and golden acorn colors
       confetti({
         particleCount: 35,
         spread: 60,
@@ -142,6 +165,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
               <span>{style.label}</span>
             </span>
 
+            {/* Recurrence Rule */}
+            {task.recurrence_rule && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                <Repeat className="w-3 h-3 text-teal-600" />
+                <span>{recurrenceLabels[task.recurrence_rule] || task.recurrence_rule}</span>
+              </span>
+            )}
+
             {/* Due Date */}
             {dueInfo && (
               <span
@@ -162,11 +193,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
               </span>
             )}
 
-            {/* Estimated Minutes */}
+            {/* Estimated vs Actual Time */}
             {task.estimated_minutes && (
               <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-50/70 border border-emerald-200/60 text-emerald-800 font-semibold">
                 <Clock className="w-3 h-3 text-emerald-600" />
                 <span>{task.estimated_minutes}p</span>
+              </span>
+            )}
+
+            {task.actual_minutes > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 font-bold">
+                <Timer className="w-3 h-3 text-amber-600" />
+                <span>Đã tập trung: {task.actual_minutes}p</span>
               </span>
             )}
           </div>
@@ -177,6 +215,24 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
               <AlignLeft className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
               <span>{task.description}</span>
             </p>
+          )}
+
+          {/* Subtasks Progress Bar & Count if any */}
+          {subtasksTotal > 0 && (
+            <div className="mt-2.5 flex items-center gap-2 max-w-xs">
+              <span className="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
+                <ListTodo className="w-3 h-3 text-emerald-600" />
+                <span>
+                  {subtasksCompleted}/{subtasksTotal} bước ({subtasksPercent}%)
+                </span>
+              </span>
+              <div className="flex-1 bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all"
+                  style={{ width: `${subtasksPercent}%` }}
+                />
+              </div>
+            </div>
           )}
 
           {/* Tags */}
@@ -200,6 +256,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
 
         {/* Hover Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Quick Focus Button */}
+          {onStartPomodoro && !task.is_completed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartPomodoro(task);
+              }}
+              className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 transition-colors flex items-center gap-1 text-[10px] font-extrabold"
+              title="Bắt đầu phiên Pomodoro tập trung vào việc này"
+            >
+              <Play className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+              <span className="hidden sm:inline">Tập trung</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={(e) => {
