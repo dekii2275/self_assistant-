@@ -80,36 +80,36 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   const weekEndStr = `${sunday.getDate()}/${sunday.getMonth() + 1}/${sunday.getFullYear()}`;
 
   return (
-    <div className="space-y-4 pb-16">
-      {/* Timetable Header & Navigation */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#e0ebe0] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#edf4ee] flex items-center justify-center text-[#265337] border border-[#d2e4d4]">
-            <CalendarDays className="w-5 h-5" />
+    <div className="h-full flex flex-col overflow-hidden gap-2.5">
+      {/* Timetable Header & Navigation (Compact ~42px) */}
+      <div className="bg-white rounded-2xl p-2 px-3.5 border border-[#e0ebe0] shadow-2xs flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#edf4ee] flex items-center justify-center text-[#265337] border border-[#d2e4d4] shrink-0">
+            <CalendarDays className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-[#1b3826]">
+            <h2 className="text-xs sm:text-sm font-black text-[#1b3826] leading-tight">
               Thời gian biểu công việc cả tuần
             </h2>
-            <p className="text-xs text-[#527d60] font-medium">
-              Tuần từ {weekStartStr} đến {weekEndStr}
+            <p className="text-[10px] text-[#527d60] font-medium leading-tight">
+              Tuần {weekStartStr} — {weekEndStr}
             </p>
           </div>
         </div>
 
         {/* Week Switcher Controls */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setCurrentWeekOffset(currentWeekOffset - 1)}
-            className="p-2 rounded-xl text-[#345c43] hover:bg-[#edf4ee] border border-[#dce8dd] transition-colors"
+            className="p-1 rounded-lg text-[#345c43] hover:bg-[#edf4ee] border border-[#dce8dd] transition-colors"
             title="Tuần trước"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={() => setCurrentWeekOffset(0)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
               currentWeekOffset === 0
                 ? 'bg-[#29553a] text-white border-[#29553a]'
                 : 'bg-white text-[#345c43] border-[#dce8dd] hover:bg-[#edf4ee]'
@@ -120,51 +120,52 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
           <button
             onClick={() => setCurrentWeekOffset(currentWeekOffset + 1)}
-            className="p-2 rounded-xl text-[#345c43] hover:bg-[#edf4ee] border border-[#dce8dd] transition-colors"
+            className="p-1 rounded-lg text-[#345c43] hover:bg-[#edf4ee] border border-[#dce8dd] transition-colors"
             title="Tuần sau"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Timetable Table Grid */}
-      <div className="bg-white rounded-3xl border border-[#e0ebe0] shadow-sm overflow-hidden overflow-x-auto">
-        <table className="w-full min-w-[850px] border-collapse text-left">
-          {/* Days Header */}
-          <thead>
-            <tr className="bg-[#f3f7f3] border-b border-[#e0ebe0]">
-              <th className="w-32 p-3 text-[11px] font-black uppercase text-[#4d785b] tracking-wider text-center border-r border-[#e0ebe0]">
-                Khung giờ
-              </th>
-              {daysOfWeek.map((dayDate, idx) => {
-                const dateKey = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
-                const isToday = dateKey === todayStr;
+      {/* Timetable Table Grid (Fills remaining height) */}
+      <div className="flex-1 min-h-0 bg-white rounded-2xl border border-[#e0ebe0] shadow-2xs overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            {/* Days Header */}
+            <thead className="sticky top-0 z-10 bg-[#f3f7f3] shadow-xs">
+              <tr className="border-b border-[#e0ebe0]">
+                <th className="w-28 p-2 text-[10px] font-black uppercase text-[#4d785b] tracking-wider text-center border-r border-[#e0ebe0]">
+                  Khung giờ
+                </th>
+                {daysOfWeek.map((dayDate, idx) => {
+                  const dateKey = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+                  const isToday = dateKey === todayStr;
 
-                return (
-                  <th
-                    key={idx}
-                    className={`p-3 text-center border-r last:border-r-0 border-[#e0ebe0] transition-colors ${
-                      isToday ? 'bg-[#e4efe5]' : ''
-                    }`}
-                  >
-                    <div className="text-[11px] font-bold text-[#558163]">
-                      {dayNames[idx]}
-                    </div>
-                    <div
-                      className={`inline-flex items-center justify-center w-7 h-7 mt-0.5 rounded-full text-xs font-black ${
-                        isToday
-                          ? 'bg-[#214730] text-white shadow-xs'
-                          : 'text-[#1b3826]'
+                  return (
+                    <th
+                      key={idx}
+                      className={`p-1.5 text-center border-r last:border-r-0 border-[#e0ebe0] transition-colors ${
+                        isToday ? 'bg-[#e4efe5]' : ''
                       }`}
                     >
-                      {dayDate.getDate()}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
+                      <div className="text-[10px] font-bold text-[#558163]">
+                        {dayNames[idx]}
+                      </div>
+                      <div
+                        className={`inline-flex items-center justify-center w-6 h-6 mt-0.5 rounded-full text-[11px] font-black ${
+                          isToday
+                            ? 'bg-[#214730] text-white shadow-2xs'
+                            : 'text-[#1b3826]'
+                        }`}
+                      >
+                        {dayDate.getDate()}
+                      </div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
 
           {/* Time Rows */}
           <tbody>
@@ -195,90 +196,88 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                     return h >= slot.hour && h < slot.hour + 2;
                   });
 
-                  return (
-                    <td
-                      key={dIdx}
-                      className={`p-1.5 align-top border-r last:border-r-0 border-[#e0ebe0] min-w-[110px] h-24 relative group hover:bg-[#edf5ee]/50 transition-colors ${
-                        isToday ? 'bg-[#f4f8f4]/60' : ''
-                      }`}
-                    >
-                      <div className="space-y-1.5 h-full flex flex-col">
-                        {cellTasks.map((task) => {
-                          const style = priorityStyles[task.priority] || priorityStyles.p3;
-                          const taskTime = task.due_date
-                            ? new Date(task.due_date).toLocaleTimeString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : '';
+                    return (
+                      <td
+                        key={dIdx}
+                        className={`p-1 align-top border-r last:border-r-0 border-[#e0ebe0] min-w-[95px] min-h-[48px] relative group hover:bg-[#edf5ee]/50 transition-colors ${
+                          isToday ? 'bg-[#f4f8f4]/60' : ''
+                        }`}
+                      >
+                        <div className="space-y-1 h-full flex flex-col min-h-[42px]">
+                          {cellTasks.map((task) => {
+                            const style = priorityStyles[task.priority] || priorityStyles.p3;
+                            const taskTime = task.due_date
+                              ? new Date(task.due_date).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : '';
 
-                          return (
-                            <div
-                              key={task.id}
-                              onClick={() => onEdit(task)}
-                              className={`p-2 rounded-xl bg-white border border-[#d8e6d9] border-l-[3.5px] ${
-                                style.border
-                              } shadow-2xs hover:shadow-md transition-all cursor-pointer select-none group/item ${
-                                task.is_completed ? 'opacity-50 line-through bg-[#f5f8f5]' : ''
-                              }`}
-                            >
-                              <div className="flex items-start gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggle(task.id);
-                                  }}
-                                  className={`w-3.5 h-3.5 mt-0.5 rounded-md border flex items-center justify-center shrink-0 ${
-                                    task.is_completed
-                                      ? 'bg-emerald-600 border-emerald-600 text-white'
-                                      : 'border-emerald-300 bg-white hover:border-emerald-600'
-                                  }`}
-                                >
-                                  {task.is_completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                                </button>
+                            return (
+                              <div
+                                key={task.id}
+                                onClick={() => onEdit(task)}
+                                className={`p-1.5 rounded-lg bg-white border border-[#d8e6d9] border-l-[3px] ${
+                                  style.border
+                                } shadow-2xs hover:shadow-sm transition-all cursor-pointer select-none group/item ${
+                                  task.is_completed ? 'opacity-50 line-through bg-[#f5f8f5]' : ''
+                                }`}
+                              >
+                                <div className="flex items-start gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onToggle(task.id);
+                                    }}
+                                    className={`w-3 h-3 mt-0.5 rounded-md border flex items-center justify-center shrink-0 ${
+                                      task.is_completed
+                                        ? 'bg-emerald-600 border-emerald-600 text-white'
+                                        : 'border-emerald-300 bg-white hover:border-emerald-600'
+                                    }`}
+                                  >
+                                    {task.is_completed && <Check className="w-2 h-2 stroke-[3]" />}
+                                  </button>
 
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[11px] font-bold text-[#1b3826] leading-tight truncate">
-                                    {task.title}
-                                  </p>
-                                  <div className="flex items-center gap-1 mt-0.5 text-[9px] text-[#558163] font-medium">
-                                    <Clock className="w-2.5 h-2.5" />
-                                    <span>{taskTime}</span>
-                                    {task.estimated_minutes && (
-                                      <span>({task.estimated_minutes}p)</span>
-                                    )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-[#1b3826] leading-tight truncate">
+                                      {task.title}
+                                    </p>
+                                    <div className="flex items-center gap-1 mt-0.2 text-[8px] text-[#558163] font-medium">
+                                      <Clock className="w-2 h-2" />
+                                      <span>{taskTime}</span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
 
-                        {/* Quick Add Button in Cell on Hover */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date(dayDate);
-                            d.setHours(slot.hour, 0, 0, 0);
-                            const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-                              .toISOString()
-                              .slice(0, 16);
-                            onQuickAddAtTime(localIso);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity mt-auto w-full py-1 rounded-lg border border-dashed border-[#b6d4bc] text-[10px] font-bold text-[#3d6e4b] hover:bg-[#e4efe6] flex items-center justify-center gap-1"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Thêm</span>
-                        </button>
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                          {/* Quick Add Button in Cell on Hover */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date(dayDate);
+                              d.setHours(slot.hour, 0, 0, 0);
+                              const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+                                .toISOString()
+                                .slice(0, 16);
+                              onQuickAddAtTime(localIso);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity mt-auto w-full py-0.5 rounded border border-dashed border-[#b6d4bc] text-[9px] font-bold text-[#3d6e4b] hover:bg-[#e4efe6] flex items-center justify-center gap-0.5"
+                          >
+                            <Plus className="w-2.5 h-2.5" />
+                            <span>Thêm</span>
+                          </button>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

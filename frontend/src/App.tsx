@@ -275,7 +275,7 @@ export function App() {
   }, [tasks, currentView, selectedTag, searchQuery, selectedCalendarDate]);
 
   return (
-    <div className="min-h-screen bg-[#f6f9f6] flex text-[#1a2e22]">
+    <div className="h-screen w-screen overflow-hidden bg-[#f6f9f6] flex text-[#1a2e22]">
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
@@ -289,9 +289,9 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {currentView === 'overview' ? (
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <main className="flex-1 min-h-0 w-full h-full p-2.5 sm:p-3.5 overflow-hidden">
             <OverviewView
               tasks={tasks}
               onToggle={handleToggleTask}
@@ -310,7 +310,7 @@ export function App() {
             />
           </main>
         ) : currentView === 'timetable' ? (
-          <>
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
             <Header
               currentView={currentView}
               selectedTag={selectedTag}
@@ -326,7 +326,7 @@ export function App() {
               setActiveLayout={setActiveLayout}
               filteredCount={tasks.length}
             />
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <main className="flex-1 min-h-0 w-full h-full p-2.5 sm:p-3.5 overflow-hidden">
               <WeeklyTimetable
                 tasks={tasks}
                 onToggle={handleToggleTask}
@@ -338,9 +338,9 @@ export function App() {
                 }}
               />
             </main>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
             <Header
               currentView={currentView}
               selectedTag={selectedTag}
@@ -357,19 +357,19 @@ export function App() {
               filteredCount={filteredTasks.length}
             />
 
-            <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <main className="flex-1 min-h-0 w-full max-w-6xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col overflow-hidden space-y-2.5">
               {/* Backend Connection Warning */}
               {errorNotice && (
-                <div className="bg-amber-50 border border-amber-200/90 text-amber-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
-                  <div className="flex items-center gap-2.5">
+                <div className="bg-amber-50 border border-amber-200/90 text-amber-900 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs shadow-2xs shrink-0 animate-in fade-in">
+                  <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>{errorNotice}</span>
                   </div>
                   <button
                     onClick={() => fetchTasks()}
-                    className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl transition-colors shrink-0"
+                    className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors shrink-0"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <RefreshCw className="w-3 h-3" />
                     <span>Thử lại</span>
                   </button>
                 </div>
@@ -377,47 +377,51 @@ export function App() {
 
               {/* Quick Input Bar (visible in list mode) */}
               {activeLayout === 'list' && (
-                <TaskInput
-                  onAddTask={handleAddTask}
-                  onOpenDetailedModal={() => {
-                    setQuickAddDefaultPriority('p3');
-                    setQuickAddDefaultDueDate(undefined);
-                    setIsQuickAddOpen(true);
-                  }}
-                />
+                <div className="shrink-0">
+                  <TaskInput
+                    onAddTask={handleAddTask}
+                    onOpenDetailedModal={() => {
+                      setQuickAddDefaultPriority('p3');
+                      setQuickAddDefaultDueDate(undefined);
+                      setIsQuickAddOpen(true);
+                    }}
+                  />
+                </div>
               )}
 
-              {/* Main Content: List or Kanban */}
-              {activeLayout === 'list' ? (
-                <TaskList
-                  tasks={filteredTasks}
-                  isLoading={isLoading}
-                  onToggle={handleToggleTask}
-                  onDelete={handleDeleteTask}
-                  onEdit={(task) => setEditingTask(task)}
-                  onOpenNewTaskModal={() => {
-                    setQuickAddDefaultPriority('p3');
-                    setQuickAddDefaultDueDate(undefined);
-                    setIsQuickAddOpen(true);
-                  }}
-                  onStartPomodoro={(task) => setPomodoroActiveTask(task)}
-                />
-              ) : (
-                <KanbanBoard
-                  tasks={filteredTasks}
-                  onToggle={handleToggleTask}
-                  onDelete={handleDeleteTask}
-                  onEdit={(task) => setEditingTask(task)}
-                  onQuickAddWithPriority={(priority) => {
-                    setQuickAddDefaultPriority(priority);
-                    setQuickAddDefaultDueDate(undefined);
-                    setIsQuickAddOpen(true);
-                  }}
-                  onStartPomodoro={(task) => setPomodoroActiveTask(task)}
-                />
-              )}
+              {/* Main Content: List or Kanban (internally scrollable) */}
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+                {activeLayout === 'list' ? (
+                  <TaskList
+                    tasks={filteredTasks}
+                    isLoading={isLoading}
+                    onToggle={handleToggleTask}
+                    onDelete={handleDeleteTask}
+                    onEdit={(task) => setEditingTask(task)}
+                    onOpenNewTaskModal={() => {
+                      setQuickAddDefaultPriority('p3');
+                      setQuickAddDefaultDueDate(undefined);
+                      setIsQuickAddOpen(true);
+                    }}
+                    onStartPomodoro={(task) => setPomodoroActiveTask(task)}
+                  />
+                ) : (
+                  <KanbanBoard
+                    tasks={filteredTasks}
+                    onToggle={handleToggleTask}
+                    onDelete={handleDeleteTask}
+                    onEdit={(task) => setEditingTask(task)}
+                    onQuickAddWithPriority={(priority) => {
+                      setQuickAddDefaultPriority(priority);
+                      setQuickAddDefaultDueDate(undefined);
+                      setIsQuickAddOpen(true);
+                    }}
+                    onStartPomodoro={(task) => setPomodoroActiveTask(task)}
+                  />
+                )}
+              </div>
             </main>
-          </>
+          </div>
         )}
       </div>
 

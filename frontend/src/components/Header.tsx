@@ -52,30 +52,30 @@ export const Header: React.FC<HeaderProps> = ({
   if (currentHour >= 18) greeting = 'Chào buổi tối';
 
   return (
-    <header className="sticky top-0 z-20 bg-[#f6f9f6]/90 backdrop-blur-md border-b border-emerald-100 transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
+    <header className="sticky top-0 z-20 bg-[#f6f9f6]/95 backdrop-blur-md border-b border-emerald-100 transition-all shrink-0">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Left Title & Mascot Pill */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={onOpenMobileMenu}
-              className="p-2 -ml-2 rounded-xl text-emerald-800 hover:bg-emerald-100 lg:hidden transition-colors"
+              className="p-1.5 -ml-1 rounded-xl text-emerald-800 hover:bg-emerald-100 lg:hidden transition-colors"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-200/80 px-2.5 py-0.5 rounded-full capitalize flex items-center gap-1 shadow-2xs">
-                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200/80 px-2 py-0.2 rounded-full capitalize flex items-center gap-1 shadow-2xs">
+                  <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
                   {greeting} 🌿
                 </span>
-                <span className="text-xs text-emerald-800/60 font-medium capitalize">
+                <span className="text-[10px] text-emerald-800/60 font-medium capitalize">
                   {todayFormatted}
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-emerald-950 tracking-tight flex items-center gap-2.5 mt-1">
+              <h1 className="text-base sm:text-lg font-black text-emerald-950 tracking-tight flex items-center gap-2 mt-0.5">
                 {titleInfo.title}
-                <span className="text-xs font-black text-emerald-700 bg-emerald-100/90 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/90 border border-emerald-200 px-2 py-0.2 rounded-full">
                   {filteredCount}
                 </span>
               </h1>

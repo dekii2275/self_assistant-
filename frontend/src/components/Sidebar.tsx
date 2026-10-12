@@ -84,9 +84,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#80c294_1px,transparent_1px)] [background-size:16px_16px]" />
 
       {/* Brand & Mascot Logo */}
-      <div className="p-5 border-b border-[#2d4e3b]/80 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative w-11 h-11 rounded-2xl overflow-hidden bg-[#2a4e39] ring-2 ring-[#4d7d5f] shadow-md shrink-0">
+      <div className="p-3.5 px-4 border-b border-[#2d4e3b]/80 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-9 h-9 rounded-xl overflow-hidden bg-[#2a4e39] ring-2 ring-[#4d7d5f] shadow-md shrink-0">
             <img
               src="/otter-mascot.png"
               alt="OtterTodo Mascot"
@@ -94,11 +94,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-white tracking-tight leading-tight flex items-center gap-1.5">
+            <h2 className="text-sm font-extrabold text-white tracking-tight leading-tight flex items-center gap-1">
               OtterTodo
             </h2>
-            <p className="text-[11px] text-[#a4c5ae] font-medium leading-tight">
-              Làm nhiều hơn, sống an nhiên hơn
+            <p className="text-[10px] text-[#a4c5ae] font-medium leading-tight">
+              Làm nhiều hơn, sống an nhiên
             </p>
           </div>
         </div>
@@ -106,15 +106,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isOpenMobile && (
           <button
             onClick={onCloseMobile}
-            className="p-1.5 rounded-lg text-[#a4c5ae] hover:text-white hover:bg-[#2d4e3b] lg:hidden"
+            className="p-1 rounded-lg text-[#a4c5ae] hover:text-white hover:bg-[#2d4e3b] lg:hidden"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-2.5 space-y-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -125,21 +125,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onSelectView(item.id);
                 onCloseMobile();
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? 'bg-[#3b664b] text-white shadow-sm'
+                  ? 'bg-[#3b664b] text-white shadow-xs'
                   : 'text-[#bcd5c4] hover:bg-[#284936] hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <Icon
-                  className={`w-4 h-4 ${isActive ? 'text-[#a6e6b8]' : 'text-[#8cb899]'}`}
+                  className={`w-3.5 h-3.5 ${isActive ? 'text-[#a6e6b8]' : 'text-[#8cb899]'}`}
                 />
                 <span>{item.label}</span>
               </div>
               {item.count !== undefined && item.count > 0 && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
                     isActive
                       ? 'bg-[#284a35] text-[#b8f0ca]'
                       : 'bg-[#294a37] text-[#9fc7ad]'
@@ -154,34 +154,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Tags section */}
         {allTags.length > 0 && onSelectTag && (
-          <div className="pt-3 mt-2 border-t border-[#2d4e3b]/50">
-            <p className="px-3 text-[10px] font-bold text-[#8cb899] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <div className="pt-2 mt-1.5 border-t border-[#2d4e3b]/50">
+            <p className="px-2.5 text-[9px] font-bold text-[#8cb899] uppercase tracking-wider mb-1 flex items-center justify-between">
               <span>Thẻ nhãn</span>
               {selectedTag && (
                 <button
                   onClick={() => onSelectTag(null)}
-                  className="text-[10px] text-[#a6e6b8] hover:underline normal-case"
+                  className="text-[9px] text-[#a6e6b8] hover:underline normal-case"
                 >
                   Xóa lọc
                 </button>
               )}
             </p>
             <div className="space-y-0.5">
-              {allTags.slice(0, 5).map((tag) => (
+              {allTags.slice(0, 4).map((tag) => (
                 <button
                   key={tag}
                   onClick={() => {
                     onSelectTag(selectedTag === tag ? null : tag);
                     onCloseMobile();
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs transition-colors ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1 rounded-lg text-[11px] transition-colors ${
                     selectedTag === tag
                       ? 'bg-[#3b664b] text-white font-bold'
                       : 'text-[#bcd5c4] hover:bg-[#284936]'
                   }`}
                 >
                   <span className="truncate">#{tag}</span>
-                  <span className="text-[10px] text-[#8cb899]">
+                  <span className="text-[9px] text-[#8cb899]">
                     {tasks.filter((t) => t.tags?.includes(tag)).length}
                   </span>
                 </button>
@@ -192,10 +192,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Scene & Quote (as in Mockup) */}
-      <div className="p-4 border-t border-[#2d4e3b]/80 bg-[#172e21]/70">
-        <div className="bg-[#244533] border border-[#345c45] rounded-2xl p-3 shadow-inner relative overflow-hidden group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#2f553f] shrink-0 border border-[#48785c]">
+      <div className="p-3 border-t border-[#2d4e3b]/80 bg-[#172e21]/70 shrink-0">
+        <div className="bg-[#244533] border border-[#345c45] rounded-xl p-2.5 shadow-inner relative overflow-hidden group">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#2f553f] shrink-0 border border-[#48785c]">
               <img
                 src="/otter-mascot.png"
                 alt="Otter mascot reading"
@@ -203,11 +203,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </div>
             <div>
-              <p className="text-[10px] text-[#8cb899] font-bold uppercase tracking-wider flex items-center gap-1">
+              <p className="text-[9px] text-[#8cb899] font-bold uppercase tracking-wider flex items-center gap-1">
                 <BookOpen className="w-2.5 h-2.5" />
                 <span>Châm ngôn ngày</span>
               </p>
-              <p className="text-[11px] text-[#e0efe4] font-medium italic leading-snug mt-0.5">
+              <p className="text-[10px] text-[#e0efe4] font-medium italic leading-snug mt-0.5 line-clamp-2">
                 "Những việc nhỏ mỗi ngày tạo nên hành trình lớn." 🍃
               </p>
             </div>
@@ -215,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Server & Port indicator */}
-        <div className="mt-2.5 flex items-center justify-between text-[10px] text-[#78a586] px-1 font-mono">
+        <div className="mt-2 flex items-center justify-between text-[9px] text-[#78a586] px-1 font-mono">
           <span className="flex items-center gap-1">
             <Server className="w-2.5 h-2.5" />
             Port: 8974
