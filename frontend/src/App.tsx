@@ -169,7 +169,7 @@ export function App() {
   }, [tasks, currentView, selectedTag, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#f6f9f6] flex text-[#1a2e22]">
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}

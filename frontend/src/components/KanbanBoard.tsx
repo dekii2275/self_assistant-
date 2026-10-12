@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Flame, AlertTriangle, Info, Coffee } from 'lucide-react';
+import { Plus, Flame, AlertTriangle, Leaf, Coffee } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 import type { Task, Priority } from '../types/task';
 
@@ -28,8 +28,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   }[] = [
     {
       priority: 'p1',
-      title: 'P1 Khẩn cấp & Quan trọng',
-      subtitle: 'Làm ngay trong ngày',
+      title: 'P1 Khẩn cấp & Sống còn',
+      subtitle: 'Xử lý ngay cùng Rái Cá',
       icon: Flame,
       accentColor: 'text-rose-600',
       bgHeader: 'bg-rose-50 border-rose-200/80',
@@ -37,7 +37,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     {
       priority: 'p2',
       title: 'P2 Quan trọng',
-      subtitle: 'Lên lịch & Chuẩn bị kỹ',
+      subtitle: 'Lên kế hoạch chu đáo',
       icon: AlertTriangle,
       accentColor: 'text-amber-600',
       bgHeader: 'bg-amber-50 border-amber-200/80',
@@ -45,18 +45,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     {
       priority: 'p3',
       title: 'P3 Tiêu chuẩn',
-      subtitle: 'Nhiệm vụ thường lệ',
-      icon: Info,
-      accentColor: 'text-blue-600',
-      bgHeader: 'bg-blue-50 border-blue-200/80',
+      subtitle: 'Dòng chảy công việc đều đặn',
+      icon: Leaf,
+      accentColor: 'text-emerald-700',
+      bgHeader: 'bg-emerald-100/70 border-emerald-300/80',
     },
     {
       priority: 'p4',
-      title: 'P4 Thấp',
-      subtitle: 'Xử lý khi rảnh rỗi',
+      title: 'P4 Việc nhẹ',
+      subtitle: 'Thong thả khi rảnh rỗi',
       icon: Coffee,
-      accentColor: 'text-slate-600',
-      bgHeader: 'bg-slate-100 border-slate-200',
+      accentColor: 'text-stone-700',
+      bgHeader: 'bg-stone-100 border-stone-200',
     },
   ];
 
@@ -72,47 +72,47 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         return (
           <div
             key={col.priority}
-            className="flex flex-col bg-slate-100/60 rounded-3xl p-3 border border-slate-200/60 min-h-[500px]"
+            className="flex flex-col bg-emerald-50/30 rounded-3xl p-3 border border-emerald-100 min-h-[500px]"
           >
-            {/* Column Header */}
+            {/* Header */}
             <div
               className={`p-3 rounded-2xl border ${col.bgHeader} mb-3 flex items-center justify-between shadow-2xs`}
             >
               <div className="flex items-center gap-2">
                 <Icon className={`w-4 h-4 ${col.accentColor}`} />
                 <div>
-                  <h3 className="text-xs font-black text-slate-800 tracking-tight">
+                  <h3 className="text-xs font-black text-emerald-950 tracking-tight">
                     {col.title}
                   </h3>
-                  <p className="text-[10px] text-slate-500">{col.subtitle}</p>
+                  <p className="text-[10px] text-emerald-800/70 font-medium">{col.subtitle}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white text-slate-700 shadow-2xs">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-emerald-900 shadow-2xs border border-emerald-100">
                   {colTasks.length}
                 </span>
                 <button
                   type="button"
                   onClick={() => onQuickAddWithPriority(col.priority)}
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white transition-colors"
+                  className="p-1 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-white transition-colors"
                   title="Thêm việc vào cột này"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 </button>
               </div>
             </div>
 
-            {/* Column Task List */}
-            <div className="flex-1 space-y-2 overflow-y-auto">
+            {/* Tasks */}
+            <div className="flex-1 space-y-2.5 overflow-y-auto">
               {colTasks.length === 0 ? (
-                <div className="h-32 border-2 border-dashed border-slate-200/80 rounded-2xl flex flex-col items-center justify-center p-4 text-center">
-                  <p className="text-[11px] font-medium text-slate-400">Không có việc</p>
+                <div className="h-32 border-2 border-dashed border-emerald-200/70 rounded-3xl flex flex-col items-center justify-center p-4 text-center">
+                  <p className="text-[11px] font-bold text-emerald-700/60">Không có việc</p>
                   <button
                     onClick={() => onQuickAddWithPriority(col.priority)}
-                    className="mt-1 text-[10px] font-bold text-indigo-600 hover:underline"
+                    className="mt-1 text-[10px] font-black text-emerald-700 hover:underline"
                   >
-                    + Thêm ngay
+                    + Thêm nhiệm vụ
                   </button>
                 </div>
               ) : (
@@ -128,11 +128,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               )}
             </div>
 
-            {/* Column Footer */}
+            {/* Footer */}
             {colMinutes > 0 && (
-              <div className="mt-2 pt-2 border-t border-slate-200/80 text-[10px] text-slate-400 flex items-center justify-between px-1">
-                <span>Tổng thời gian ước tính:</span>
-                <span className="font-bold text-slate-700">{colMinutes} phút</span>
+              <div className="mt-2.5 pt-2 border-t border-emerald-100 text-[10px] text-emerald-800/70 flex items-center justify-between px-1 font-medium">
+                <span>Ước tính cần:</span>
+                <span className="font-extrabold text-emerald-900">{colMinutes} phút</span>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, SlidersHorizontal, Flame, AlertTriangle, Info, Coffee } from 'lucide-react';
+import { Plus, SlidersHorizontal, Flame, AlertTriangle, Leaf, Coffee } from 'lucide-react';
 import type { Priority, TaskCreateInput } from '../types/task';
 
 interface TaskInputProps {
@@ -30,11 +30,14 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
     }
   };
 
-  const priorityBadges: Record<Priority, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
-    p1: { label: 'P1', icon: Flame, color: 'text-rose-600 bg-rose-50 border-rose-200' },
-    p2: { label: 'P2', icon: AlertTriangle, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    p3: { label: 'P3', icon: Info, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    p4: { label: 'P4', icon: Coffee, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+  const priorityBadges: Record<
+    Priority,
+    { label: string; icon: React.ComponentType<{ className?: string }>; color: string }
+  > = {
+    p1: { label: 'P1 Khẩn cấp', icon: Flame, color: 'text-rose-700 bg-rose-50 border-rose-200' },
+    p2: { label: 'P2 Quan trọng', icon: AlertTriangle, color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    p3: { label: 'P3 Tiêu chuẩn', icon: Leaf, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+    p4: { label: 'P4 Việc nhẹ', icon: Coffee, color: 'text-stone-700 bg-stone-100 border-stone-200' },
   };
 
   const cyclePriority = () => {
@@ -46,37 +49,37 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
   const CurrentPriorityIcon = priorityBadges[priority].icon;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-2.5 transition-all focus-within:border-indigo-400 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <div className="pl-2 text-indigo-600">
-          <Plus className="w-5 h-5 stroke-[2.5]" />
+    <div className="bg-white rounded-3xl shadow-sm border border-emerald-200/90 p-2.5 transition-all focus-within:border-emerald-500 focus-within:shadow-md focus-within:ring-3 focus-within:ring-emerald-200/50">
+      <form onSubmit={handleSubmit} className="flex items-center gap-2.5">
+        <div className="pl-2.5 text-emerald-600">
+          <Plus className="w-5 h-5 stroke-[3]" />
         </div>
 
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Thêm nhanh việc cần làm... (Nhấn Enter để lưu)"
-          className="flex-1 text-sm font-semibold text-slate-800 placeholder-slate-400 bg-transparent border-0 outline-none px-1"
+          placeholder="Thêm nhiệm vụ mới cho bé Rái Cá... (Nhấn Enter để lưu)"
+          className="flex-1 text-sm font-bold text-emerald-950 placeholder-emerald-800/40 bg-transparent border-0 outline-none px-1"
         />
 
-        {/* Priority cycle pill */}
+        {/* Priority cycle badge */}
         <button
           type="button"
           onClick={cyclePriority}
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all ${priorityBadges[priority].color}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${priorityBadges[priority].color}`}
           title="Bấm để đổi độ ưu tiên"
         >
           <CurrentPriorityIcon className="w-3.5 h-3.5" />
           <span>{priorityBadges[priority].label}</span>
         </button>
 
-        {/* Open Detailed Modal button */}
+        {/* Full Modal button */}
         <button
           type="button"
           onClick={onOpenDetailedModal}
-          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
-          title="Mở thêm chi tiết (Hạn chót, thời gian, tags...)"
+          className="p-2 text-emerald-700/60 hover:text-emerald-800 rounded-xl hover:bg-emerald-50 transition-colors"
+          title="Thêm chi tiết (hạn chót, thời gian, tags...)"
         >
           <SlidersHorizontal className="w-4 h-4" />
         </button>
@@ -85,7 +88,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
         <button
           type="submit"
           disabled={!title.trim() || isSubmitting}
-          className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xs shadow-indigo-600/20"
+          className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xs shadow-emerald-700/20"
         >
           Thêm
         </button>

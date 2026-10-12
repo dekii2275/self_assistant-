@@ -25,33 +25,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
   > = {
     p1: {
       border: 'border-l-rose-500',
-      badge: 'bg-rose-50 text-rose-700 border-rose-200/80',
+      badge: 'bg-rose-50 text-rose-700 border-rose-200',
       label: 'P1 Khẩn cấp',
       dot: 'bg-rose-500',
     },
     p2: {
       border: 'border-l-amber-500',
-      badge: 'bg-amber-50 text-amber-700 border-amber-200/80',
+      badge: 'bg-amber-50 text-amber-700 border-amber-200',
       label: 'P2 Quan trọng',
       dot: 'bg-amber-500',
     },
     p3: {
-      border: 'border-l-blue-500',
-      badge: 'bg-blue-50 text-blue-700 border-blue-200/80',
+      border: 'border-l-emerald-600',
+      badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       label: 'P3 Tiêu chuẩn',
-      dot: 'bg-blue-500',
+      dot: 'bg-emerald-600',
     },
     p4: {
-      border: 'border-l-slate-400',
-      badge: 'bg-slate-100 text-slate-600 border-slate-200',
-      label: 'P4 Thấp',
-      dot: 'bg-slate-400',
+      border: 'border-l-stone-400',
+      badge: 'bg-stone-100 text-stone-700 border-stone-200',
+      label: 'P4 Việc nhẹ',
+      dot: 'bg-stone-400',
     },
   };
 
   const style = priorityStyles[task.priority] || priorityStyles.p3;
 
-  // Format Due Date
   const formatDueDate = (dateStr?: string | null) => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
@@ -77,10 +76,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
   const handleToggleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!task.is_completed) {
-      // Fire confetti celebration on task completion
+      // Confetti with nature leaf green and golden acorn colors
       confetti({
-        particleCount: 30,
-        spread: 50,
+        particleCount: 35,
+        spread: 60,
+        colors: ['#10b981', '#059669', '#f59e0b', '#34d399', '#84cc16', '#d97706'],
         origin: {
           x: e.clientX / window.innerWidth,
           y: e.clientY / window.innerHeight,
@@ -100,47 +100,49 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
   return (
     <div
       onClick={() => onEdit(task)}
-      className={`group relative bg-white rounded-2xl border border-slate-200/80 border-l-4 ${
-        task.is_completed ? 'border-l-slate-300 opacity-60 bg-slate-50/50' : style.border
-      } p-4 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer select-none`}
+      className={`group relative bg-white rounded-3xl border border-emerald-100/90 border-l-[5px] ${
+        task.is_completed
+          ? 'border-l-emerald-200 opacity-60 bg-emerald-50/20'
+          : style.border
+      } p-4 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-pointer select-none`}
     >
       <div className="flex items-start gap-3.5">
-        {/* Animated Checkbox */}
+        {/* Checkbox */}
         <button
           type="button"
           onClick={handleToggleClick}
-          className={`mt-0.5 w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+          className={`mt-0.5 w-5 h-5 rounded-xl border-2 flex items-center justify-center transition-all ${
             task.is_completed
-              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs animate-check-pop'
-              : 'border-slate-300 hover:border-indigo-500 hover:scale-105 bg-white'
+              ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs animate-check-pop'
+              : 'border-emerald-300 hover:border-emerald-600 hover:scale-105 bg-white'
           }`}
-          title={task.is_completed ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã xong'}
+          title={task.is_completed ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu hoàn thành'}
         >
           {task.is_completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
         </button>
 
-        {/* Task Body */}
+        {/* Task content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`text-sm font-semibold tracking-tight transition-all leading-snug ${
+              className={`text-sm font-bold tracking-tight transition-all leading-snug ${
                 task.is_completed
                   ? 'line-through text-slate-400'
-                  : 'text-slate-800 group-hover:text-indigo-600'
+                  : 'text-emerald-950 group-hover:text-emerald-700'
               }`}
             >
               {task.title}
             </span>
 
-            {/* Priority Tag */}
+            {/* Priority Badge */}
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${style.badge}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${style.badge}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
               <span>{style.label}</span>
             </span>
 
-            {/* Due Date Badge */}
+            {/* Due Date */}
             {dueInfo && (
               <span
                 className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
@@ -148,13 +150,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
                     ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
                     : dueInfo.isToday
                     ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 }`}
               >
                 {dueInfo.isOverdue ? (
                   <AlertCircle className="w-3 h-3 text-rose-600" />
                 ) : (
-                  <Calendar className="w-3 h-3 text-slate-400" />
+                  <Calendar className="w-3 h-3 text-emerald-600/70" />
                 )}
                 <span>{dueInfo.label}</span>
               </span>
@@ -162,17 +164,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
 
             {/* Estimated Minutes */}
             {task.estimated_minutes && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 font-semibold">
-                <Clock className="w-3 h-3 text-slate-400" />
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-50/70 border border-emerald-200/60 text-emerald-800 font-semibold">
+                <Clock className="w-3 h-3 text-emerald-600" />
                 <span>{task.estimated_minutes}p</span>
               </span>
             )}
           </div>
 
-          {/* Description Snippet */}
+          {/* Description */}
           {task.description && (
-            <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed flex items-start gap-1">
-              <AlignLeft className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-emerald-900/70 mt-1.5 line-clamp-2 leading-relaxed flex items-start gap-1 font-medium">
+              <AlignLeft className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
               <span>{task.description}</span>
             </p>
           )}
@@ -187,7 +189,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
                 .map((tag, i) => (
                   <span
                     key={i}
-                    className="text-[10px] font-medium text-indigo-600 bg-indigo-50/70 border border-indigo-100 px-2 py-0.5 rounded-md"
+                    className="text-[10px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-md"
                   >
                     #{tag}
                   </span>
@@ -196,7 +198,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
           )}
         </div>
 
-        {/* Hover Action Buttons */}
+        {/* Hover Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             type="button"
@@ -204,7 +206,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
               e.stopPropagation();
               onEdit(task);
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="p-1.5 rounded-lg text-emerald-700/60 hover:text-emerald-800 hover:bg-emerald-50 transition-colors"
             title="Chỉnh sửa chi tiết"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -213,7 +215,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
           <button
             type="button"
             onClick={handleDeleteClick}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            className="p-1.5 rounded-lg text-emerald-700/60 hover:text-rose-600 hover:bg-rose-50 transition-colors"
             title="Xóa công việc"
           >
             <Trash2 className="w-3.5 h-3.5" />

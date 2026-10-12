@@ -8,7 +8,7 @@ import {
   Check,
   Flame,
   AlertTriangle,
-  Info,
+  Leaf,
   Coffee,
   Save,
 } from 'lucide-react';
@@ -82,95 +82,101 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     }
   };
 
-  const priorityItems: { value: Priority; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const priorityItems: {
+    value: Priority;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
     { value: 'p1', label: 'P1 Khẩn cấp', icon: Flame },
     { value: 'p2', label: 'P2 Quan trọng', icon: AlertTriangle },
-    { value: 'p3', label: 'P3 Tiêu chuẩn', icon: Info },
-    { value: 'p4', label: 'P4 Thấp', icon: Coffee },
+    { value: 'p3', label: 'P3 Tiêu chuẩn', icon: Leaf },
+    { value: 'p4', label: 'P4 Việc nhẹ', icon: Coffee },
   ];
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs transition-opacity animate-in fade-in"
         onClick={onClose}
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-200">
-          {/* Drawer Header */}
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div className="flex items-center gap-2">
+        <div className="w-screen max-w-md bg-white shadow-2xl border-l border-emerald-100 flex flex-col animate-in slide-in-from-right duration-200">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/50">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => onToggle(task.id)}
-                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${
                   task.is_completed
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-slate-300 hover:border-indigo-500 bg-white'
+                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                    : 'border-emerald-300 hover:border-emerald-600 bg-white'
                 }`}
-                title={task.is_completed ? 'Đánh dấu chưa xong' : 'Đánh dấu hoàn thành'}
+                title={task.is_completed ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã xong'}
               >
                 {task.is_completed && <Check className="w-4 h-4 stroke-[3]" />}
               </button>
-              <span className="text-xs font-mono text-slate-400">TASK-{task.id}</span>
+              <span className="text-xs font-mono font-bold text-emerald-800/60">
+                OTTER-{task.id}
+              </span>
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={() => {
-                  if (confirm('Bạn chắc chắn muốn xóa việc này?')) {
+                  if (confirm('Bạn chắc chắn muốn xóa nhiệm vụ này?')) {
                     onDelete(task.id);
                     onClose();
                   }
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="p-1.5 rounded-lg text-emerald-700/60 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                 title="Xóa công việc"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-emerald-700/60 hover:text-emerald-950 hover:bg-emerald-100/60 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Drawer Body */}
+          {/* Body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             {/* Title */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Tiêu đề
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1">
+                Tiêu đề nhiệm vụ
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-base font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                className="w-full text-base font-extrabold text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-2xl px-3.5 py-2.5 outline-none focus:bg-white focus:border-emerald-500 transition-all"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Chi tiết & Ghi chú
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1">
+                Ghi chú & Chi tiết
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
-                placeholder="Ghi chú chi tiết, tài liệu đính kèm..."
-                className="w-full text-xs sm:text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-3.5 outline-none focus:bg-white focus:border-indigo-400 transition-all leading-relaxed"
+                placeholder="Ghi chú chi tiết, tài liệu..."
+                className="w-full text-xs sm:text-sm text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-2xl p-3.5 outline-none focus:bg-white focus:border-emerald-500 transition-all leading-relaxed font-medium"
               />
             </div>
 
             {/* Priority */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1.5">
                 Độ ưu tiên
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -182,10 +188,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       key={item.value}
                       type="button"
                       onClick={() => setPriority(item.value)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold border transition-all ${
                         isSelected
-                          ? 'bg-indigo-50 border-indigo-400 text-indigo-700 shadow-2xs font-bold'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                          ? 'bg-emerald-100/90 border-emerald-400 text-emerald-900 font-extrabold shadow-2xs'
+                          : 'border-emerald-200 text-emerald-800/70 hover:border-emerald-300'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -198,22 +204,22 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
             {/* Due Date */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1.5 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Hạn chót</span>
               </label>
               <input
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:border-indigo-400"
+                className="w-full text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-2xl px-3 py-2.5 outline-none focus:bg-white focus:border-emerald-500"
               />
             </div>
 
             {/* Estimated Minutes */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1.5 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Thời gian ước tính (phút)</span>
               </label>
               <input
@@ -223,38 +229,38 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 value={estimatedMinutes}
                 onChange={(e) => setEstimatedMinutes(e.target.value ? Number(e.target.value) : '')}
                 placeholder="25"
-                className="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:border-indigo-400"
+                className="w-full text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-2xl px-3 py-2.5 outline-none focus:bg-white focus:border-emerald-500"
               />
             </div>
 
             {/* Tags */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                <Tag className="w-3.5 h-3.5" />
-                <span>Thẻ nhãn (tags)</span>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-1.5 flex items-center gap-1">
+                <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Thẻ rừng xanh (tags)</span>
               </label>
               <input
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                placeholder="work, personal, project..."
-                className="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:border-indigo-400"
+                placeholder="work, personal, study..."
+                className="w-full text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-2xl px-3 py-2.5 outline-none focus:bg-white focus:border-emerald-500"
               />
             </div>
           </div>
 
-          {/* Drawer Footer */}
-          <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">
+          {/* Footer */}
+          <div className="p-4 border-t border-emerald-100 bg-emerald-50/40 flex items-center justify-between">
+            <span className="text-[11px] text-emerald-800/60 font-medium">
               Cập nhật: {new Date(task.updated_at).toLocaleTimeString('vi-VN')}
             </span>
             <button
               onClick={handleSave}
               disabled={isSaving || !title.trim()}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all shadow-md shadow-emerald-700/20 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              <span>{isSaving ? 'Đang lưu...' : 'Lưu nhiệm vụ'}</span>
             </button>
           </div>
         </div>
