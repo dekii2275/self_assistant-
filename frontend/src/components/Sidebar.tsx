@@ -218,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="mt-2 flex items-center justify-between text-[9px] text-[#78a586] px-1 font-mono">
           <span className="flex items-center gap-1">
             <Server className="w-2.5 h-2.5" />
-            Port: 8974
+            Backend API
           </span>
           <span className="flex items-center gap-1">
             <span

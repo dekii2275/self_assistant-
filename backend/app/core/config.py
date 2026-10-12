@@ -35,10 +35,17 @@ class Settings(BaseSettings):
 
     def get_database_url(self) -> str:
         if self.DATABASE_URL:
-            # ensure asyncpg driver prefix
-            if self.DATABASE_URL.startswith("postgresql://"):
-                return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-            return self.DATABASE_URL
+            url = self.DATABASE_URL.strip()
+            # Handle postgres:// or postgresql:// prefix for asyncpg
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+            # asyncpg handles 'ssl=require' instead of libpq's 'sslmode=require'
+            if "sslmode=require" in url:
+                url = url.replace("sslmode=require", "ssl=require")
+            return url
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(

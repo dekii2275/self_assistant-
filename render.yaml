@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: self-assistant-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        value: "https://*.vercel.app,http://localhost:5274,http://localhost:5173"
+      - key: PYTHON_VERSION
+        value: 3.11.9
