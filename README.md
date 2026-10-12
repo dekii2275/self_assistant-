@@ -80,7 +80,7 @@ self_assistant-/
 │   └── .env.example
 ├── frontend/                 # React 19 + TypeScript + Vite
 │   ├── src/
-│   │   ├── components/      # TaskInput, TaskItem, TaskList, FilterBar, StatsBar, Navbar
+│   │   ├── components/      # Sidebar, Header, TaskCard, TaskList, KanbanBoard, QuickAddModal, TaskDetailDrawer
 │   │   ├── services/        # Axios API Client
 │   │   ├── types/           # TypeScript interfaces
 │   │   ├── App.tsx
