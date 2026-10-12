@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     # Database
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5974
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_USER: str = "app_user"
+    POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = "assistant_db"
     DATABASE_URL: str | None = None
 
