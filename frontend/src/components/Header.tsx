@@ -26,11 +26,13 @@ export const Header: React.FC<HeaderProps> = ({
   filteredCount,
 }) => {
   const viewTitles: Record<NavView, { title: string; subtitle: string }> = {
-    all: { title: 'Tất cả nhiệm vụ', subtitle: 'Khu rừng công việc của bạn' },
+    overview: { title: 'Tổng quan OtterTodo', subtitle: 'Khu rừng công việc và tiến độ của bạn' },
     today: { title: 'Kế hoạch Hôm nay', subtitle: 'Tập trung vào những ưu tiên cần làm ngay' },
-    upcoming: { title: 'Kế hoạch 7 ngày tới', subtitle: 'Lịch trình và hạn chót sắp đến' },
-    urgent: { title: 'Ưu tiên khẩn cấp (P1)', subtitle: 'Những việc quan trọng cần giải quyết ngay' },
-    completed: { title: 'Nhật ký hoàn thành', subtitle: 'Thành quả bạn và bé Rái Cá đã đạt được' },
+    timetable: { title: 'Thời gian biểu tuần', subtitle: 'Sắp xếp lịch trình trực quan theo từng khung giờ' },
+    tasks: { title: 'Tất cả công việc', subtitle: 'Danh sách và bảng quản lý nhiệm vụ' },
+    projects: { title: 'Dự án đang thực hiện', subtitle: 'Tiến độ các dự án và mục tiêu lớn' },
+    stats: { title: 'Thống kê & Năng suất', subtitle: 'Báo cáo thời gian và hiệu suất làm việc' },
+    settings: { title: 'Cài đặt', subtitle: 'Cấu hình thông báo, giao diện và dữ liệu' },
   };
 
   const titleInfo = selectedTag

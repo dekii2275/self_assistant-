@@ -19,6 +19,7 @@ interface QuickAddModalProps {
   onClose: () => void;
   onAddTask: (task: TaskCreateInput) => Promise<void>;
   defaultPriority?: Priority;
+  defaultDueDate?: string;
 }
 
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({
@@ -26,6 +27,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   onClose,
   onAddTask,
   defaultPriority = 'p3',
+  defaultDueDate,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -42,6 +44,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
       setPriority(defaultPriority);
+      if (defaultDueDate) {
+        setDueDate(defaultDueDate.slice(0, 16));
+      }
     } else {
       setTitle('');
       setDescription('');
@@ -49,7 +54,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       setEstimatedMinutes('');
       setTags('');
     }
-  }, [isOpen, defaultPriority]);
+  }, [isOpen, defaultPriority, defaultDueDate]);
 
   if (!isOpen) return null;
 
