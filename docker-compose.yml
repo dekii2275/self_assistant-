@@ -1,0 +1,79 @@
+services:
+  # -------------------------------------------------------------
+  # Database Service (PostgreSQL 16)
+  # Host port: 5974 (tránh trùng port 5432 mặc định)
+  # -------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: self_assistant_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-assistant_db}
+    ports:
+      - "${POSTGRES_PORT:-5974}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-assistant_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - assistant_net
+
+  # -------------------------------------------------------------
+  # Backend Service (FastAPI)
+  # Host port: 8974 (tránh trùng port 8000 / 8080 mặc định)
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: self_assistant_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-assistant_db}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-assistant_db}
+      - BACKEND_CORS_ORIGINS=["http://localhost:5274","http://127.0.0.1:5274"]
+    ports:
+      - "${BACKEND_PORT:-8974}:8000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - assistant_net
+
+  # -------------------------------------------------------------
+  # Frontend Service (React + Vite + Nginx)
+  # Host port: 5274 (tránh trùng port 3000 / 5173 / 80 mặc định)
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8974/api/v1
+    container_name: self_assistant_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5274}:80"
+    networks:
+      - assistant_net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  assistant_net:
+    driver: bridge
