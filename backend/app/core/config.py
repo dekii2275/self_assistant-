@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 from typing import List, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,17 +36,38 @@ class Settings(BaseSettings):
 
     def get_database_url(self) -> str:
         if self.DATABASE_URL:
-            url = self.DATABASE_URL.strip()
+            url_str = self.DATABASE_URL.strip()
             # Handle postgres:// or postgresql:// prefix for asyncpg
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-            elif url.startswith("postgresql://"):
-                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-            
-            # asyncpg handles 'ssl=require' instead of libpq's 'sslmode=require'
-            if "sslmode=require" in url:
-                url = url.replace("sslmode=require", "ssl=require")
-            return url
+            if url_str.startswith("postgres://"):
+                url_str = url_str.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url_str.startswith("postgresql://"):
+                url_str = url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+            parsed = urllib.parse.urlsplit(url_str)
+            query_params = urllib.parse.parse_qs(parsed.query)
+
+            # Clean query parameters: remove libpq-specific unsupported options like channel_binding, sslmode
+            unsupported = {"channel_binding", "sslmode", "gssencmode", "target_session_attrs"}
+            has_ssl = False
+            if "sslmode" in query_params:
+                if any(val in ["require", "verify-ca", "verify-full"] for val in query_params["sslmode"]):
+                    has_ssl = True
+            if "ssl" in query_params:
+                has_ssl = True
+
+            cleaned_params = {}
+            for k, v in query_params.items():
+                if k.lower() not in unsupported and k.lower() != "ssl":
+                    cleaned_params[k] = v[0]
+
+            if has_ssl:
+                cleaned_params["ssl"] = "require"
+
+            new_query = urllib.parse.urlencode(cleaned_params)
+            return urllib.parse.urlunsplit(
+                (parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment)
+            )
+
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(
