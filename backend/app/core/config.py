@@ -17,6 +17,19 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "assistant_db"
     DATABASE_URL: str | None = None
 
+    # Outgoing task reminders. Leave SMTP_HOST empty to disable email delivery.
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_SECURITY: str = "starttls"  # starttls, ssl, or none
+    REMINDER_TIMEZONE: str = "Asia/Bangkok"
+
+    @property
+    def email_reminders_configured(self) -> bool:
+        return bool(self.SMTP_HOST and self.SMTP_FROM_EMAIL and self.SMTP_SECURITY in {"starttls", "ssl", "none"})
+
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5274",

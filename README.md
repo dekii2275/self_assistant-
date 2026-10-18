@@ -100,3 +100,27 @@ self_assistant-/
 - [ ] **Giai đoạn 2**: Subtasks & Checklist phân rã công việc.
 - [ ] **Giai đoạn 3**: Recurring rules & Smart reminders scheduler.
 - [ ] **Giai đoạn 4**: Tích hợp trợ lý AI (NLP Task Parser, Auto-reschedule, Daily Briefing).
+
+### Nhắc việc trước hạn
+
+Khi tạo hoặc sửa nhiệm vụ có hạn chót, chọn nhắc trước **10 phút**, **1 giờ** hoặc **1 ngày**. Lời nhắc xuất hiện trong ứng dụng; nếu bật quyền thông báo, trình duyệt cũng hiển thị thông báo hệ thống. Mỗi hạn chót chỉ được nhắc một lần. Đổi hạn hoặc thời điểm nhắc sẽ đặt lại lần nhắc; nhiệm vụ lặp lại giữ nguyên lựa chọn cho lần kế tiếp.
+
+Ứng dụng cần đang mở để hiển thị lời nhắc trong ứng dụng hoặc thông báo hệ thống. Thông báo hệ thống cần HTTPS hoặc localhost và quyền thông báo của trình duyệt. Email ở phần dưới được backend gửi cả khi đã đóng ứng dụng.
+
+### Nhắc việc qua email
+
+Trong form tạo hoặc sửa nhiệm vụ, chọn hạn chót, thời điểm nhắc, rồi nhập địa chỉ ở ô **Gửi nhắc việc qua email**. Để trống ô này nếu chỉ muốn nhắc trong ứng dụng. Nhiệm vụ lặp lại giữ địa chỉ email cho lần kế tiếp. Backend kiểm tra mỗi 30 giây và gửi email ngay cả khi trình duyệt đã đóng; mỗi lần nhắc chỉ gửi một email thành công. Nếu SMTP tạm lỗi, hệ thống thử lại sau 5 phút (tối đa đến 1 ngày sau hạn chót).
+
+Để bật gửi email khi chạy Docker, sao chép các biến sau vào file `.env` ở thư mục gốc rồi điền thông tin SMTP của bạn. Không commit mật khẩu SMTP vào Git.
+
+```dotenv
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=your-account@example.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=your-account@example.com
+SMTP_SECURITY=starttls
+REMINDER_TIMEZONE=Asia/Bangkok
+```
+
+Sau khi sửa `.env`, chạy `docker compose up -d --force-recreate backend`. `SMTP_SECURITY` nhận `starttls`, `ssl` (thường cổng 465) hoặc `none` (chỉ nên dùng với SMTP nội bộ). Nếu chưa cấu hình SMTP, vẫn có thể lưu địa chỉ email trong nhiệm vụ nhưng email chỉ bắt đầu được gửi khi backend đã được cấu hình và khởi động lại. Bản cài đặt này dành cho môi trường cá nhân tin cậy vì API hiện chưa có đăng nhập.

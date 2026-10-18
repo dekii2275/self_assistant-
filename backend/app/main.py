@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.email_reminders import email_reminder_loop
 
 
 from sqlalchemy import text
@@ -17,7 +19,20 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS actual_minutes INTEGER DEFAULT 0 NOT NULL;"))
         await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence_rule VARCHAR(50);"))
-    yield
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_minutes_before INTEGER;"))
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMP WITH TIME ZONE;"))
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS email_reminder_to VARCHAR(320);"))
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS email_reminder_sent_at TIMESTAMP WITH TIME ZONE;"))
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS email_reminder_claimed_at TIMESTAMP WITH TIME ZONE;"))
+    reminder_worker = asyncio.create_task(email_reminder_loop())
+    try:
+        yield
+    finally:
+        reminder_worker.cancel()
+        try:
+            await reminder_worker
+        except asyncio.CancelledError:
+            pass
     await engine.dispose()
 
 

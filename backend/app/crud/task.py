@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
-from sqlalchemy import select, or_
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.task import Task, Subtask, StatusEnum
@@ -55,6 +56,8 @@ async def create_task(db: AsyncSession, task_in: TaskCreate) -> Task:
         priority=task_in.priority,
         status=task_in.status,
         due_date=task_in.due_date,
+        reminder_minutes_before=task_in.reminder_minutes_before,
+        email_reminder_to=task_in.email_reminder_to,
         estimated_minutes=task_in.estimated_minutes,
         actual_minutes=task_in.actual_minutes,
         recurrence_rule=task_in.recurrence_rule,
@@ -85,6 +88,26 @@ async def update_task(db: AsyncSession, db_task: Task, task_in: TaskUpdate) -> T
     elif "status" in update_data and "is_completed" not in update_data:
         update_data["is_completed"] = (update_data["status"] == StatusEnum.DONE.value)
 
+    next_due_date = update_data.get("due_date", db_task.due_date)
+    next_reminder = update_data.get("reminder_minutes_before", db_task.reminder_minutes_before)
+    next_email = update_data.get("email_reminder_to", db_task.email_reminder_to)
+    if next_reminder is not None and next_due_date is None:
+        raise ValueError("A due date is required for a reminder")
+    if next_email is not None and next_reminder is None:
+        raise ValueError("A reminder is required for email delivery")
+    if (
+        ("due_date" in update_data and update_data["due_date"] != db_task.due_date)
+        or ("reminder_minutes_before" in update_data and next_reminder != db_task.reminder_minutes_before)
+    ):
+        db_task.reminder_sent_at = None
+    if (
+        ("due_date" in update_data and update_data["due_date"] != db_task.due_date)
+        or ("reminder_minutes_before" in update_data and next_reminder != db_task.reminder_minutes_before)
+        or ("email_reminder_to" in update_data and next_email != db_task.email_reminder_to)
+    ):
+        db_task.email_reminder_sent_at = None
+        db_task.email_reminder_claimed_at = None
+
     for field, value in update_data.items():
         setattr(db_task, field, value)
 
@@ -110,6 +133,8 @@ async def _create_next_recurrence(db: AsyncSession, db_task: Task) -> None:
         priority=db_task.priority,
         status=StatusEnum.TODO.value,
         due_date=next_due,
+        reminder_minutes_before=db_task.reminder_minutes_before,
+        email_reminder_to=db_task.email_reminder_to,
         estimated_minutes=db_task.estimated_minutes,
         actual_minutes=0,
         recurrence_rule=db_task.recurrence_rule,
@@ -134,6 +159,37 @@ async def toggle_task_completion(db: AsyncSession, db_task: Task) -> Task:
     await db.commit()
     await db.refresh(db_task)
     return db_task
+
+
+async def claim_due_reminders(db: AsyncSession, limit: int = 20) -> Sequence[Task]:
+    """Claim reminders once across tabs while leaving a day to catch up after downtime."""
+    now = datetime.now(timezone.utc)
+    due_within = or_(*(
+        and_(Task.reminder_minutes_before == minutes, Task.due_date <= now + timedelta(minutes=minutes))
+        for minutes in (10, 60, 1440)
+    ))
+    stmt = (
+        select(Task)
+        .where(
+            Task.is_completed.is_(False),
+            Task.reminder_sent_at.is_(None),
+            Task.due_date.is_not(None),
+            Task.due_date >= now - timedelta(days=1),
+            due_within,
+        )
+        .order_by(Task.due_date.asc())
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    result = await db.execute(stmt)
+    tasks = result.scalars().all()
+    for task in tasks:
+        task.reminder_sent_at = now
+    if tasks:
+        await db.commit()
+        for task in tasks:
+            await db.refresh(task, attribute_names=["updated_at"])
+    return tasks
 
 
 # -------------------------------------------------------------

@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import List, Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 PriorityValue = Literal["p1", "p2", "p3", "p4"]
 StatusValue = Literal["todo", "in_progress", "done"]
 RecurrenceValue = Literal["daily", "weekdays", "weekly", "monthly"]
+ReminderValue = Literal[10, 60, 1440]
 
 
 class SubtaskBase(BaseModel):
@@ -39,6 +40,8 @@ class TaskBase(BaseModel):
     priority: PriorityValue = Field("p3", description="Độ ưu tiên: p1, p2, p3, p4")
     status: StatusValue = Field("todo", description="Trạng thái: todo, in_progress, done")
     due_date: Optional[datetime] = Field(None, description="Hạn chót hoàn thành")
+    reminder_minutes_before: Optional[ReminderValue] = Field(None, description="Nhắc trước hạn 10 phút, 1 giờ hoặc 1 ngày")
+    email_reminder_to: Optional[EmailStr] = Field(None, description="Địa chỉ nhận email nhắc việc")
     estimated_minutes: Optional[int] = Field(None, ge=1, description="Thời gian ước tính (phút)")
     actual_minutes: int = Field(0, ge=0, description="Thời gian thực tế đã làm (phút)")
     recurrence_rule: Optional[RecurrenceValue] = Field(None, description="Quy tắc lặp: daily, weekdays, weekly, monthly")
@@ -52,6 +55,14 @@ class TaskBase(BaseModel):
             raise ValueError("Title must not be blank")
         return value
 
+    @model_validator(mode="after")
+    def reminder_needs_due_date(self):
+        if self.reminder_minutes_before is not None and self.due_date is None:
+            raise ValueError("A due date is required for a reminder")
+        if self.email_reminder_to is not None and self.reminder_minutes_before is None:
+            raise ValueError("A reminder is required for email delivery")
+        return self
+
 
 class TaskCreate(TaskBase):
     subtask_titles: Optional[List[str]] = Field(None, description="Danh sách các bước con ban đầu")
@@ -64,6 +75,8 @@ class TaskUpdate(BaseModel):
     status: Optional[StatusValue] = None
     is_completed: Optional[bool] = None
     due_date: Optional[datetime] = None
+    reminder_minutes_before: Optional[ReminderValue] = None
+    email_reminder_to: Optional[EmailStr] = None
     estimated_minutes: Optional[int] = Field(None, ge=1)
     actual_minutes: Optional[int] = Field(None, ge=0)
     recurrence_rule: Optional[RecurrenceValue] = None
@@ -83,6 +96,10 @@ class TaskUpdate(BaseModel):
         if "status" in self.model_fields_set and "is_completed" in self.model_fields_set:
             if self.is_completed != (self.status == "done"):
                 raise ValueError("status and is_completed disagree")
+        if self.reminder_minutes_before is not None and "due_date" in self.model_fields_set and self.due_date is None:
+            raise ValueError("A due date is required for a reminder")
+        if self.email_reminder_to is not None and "reminder_minutes_before" in self.model_fields_set and self.reminder_minutes_before is None:
+            raise ValueError("A reminder is required for email delivery")
         return self
 
 

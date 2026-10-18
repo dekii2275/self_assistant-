@@ -16,7 +16,8 @@ import {
   Repeat,
   Timer,
 } from 'lucide-react';
-import type { Task, Priority, TaskStatus, TaskUpdateInput, RecurrenceRule, Subtask } from '../types/task';
+import type { Task, Priority, TaskStatus, TaskUpdateInput, RecurrenceRule, ReminderMinutes, Subtask } from '../types/task';
+import { ReminderField } from './ReminderField';
 
 interface TaskDetailDrawerProps {
   task: Task | null;
@@ -48,6 +49,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | ''>('');
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | ''>('');
+  const [reminderMinutes, setReminderMinutes] = useState<ReminderMinutes | null>(null);
+  const [reminderEmail, setReminderEmail] = useState('');
   const [tags, setTags] = useState('');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -60,6 +63,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       setStatus(task.status);
       setEstimatedMinutes(task.estimated_minutes ?? '');
       setRecurrenceRule(task.recurrence_rule || '');
+      setReminderMinutes(task.reminder_minutes_before ?? null);
+      setReminderEmail(task.email_reminder_to ?? '');
       setTags(task.tags || '');
 
       if (task.due_date) {
@@ -88,6 +93,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         due_date: dueDate ? new Date(dueDate).toISOString() : null,
         estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : null,
         recurrence_rule: (recurrenceRule as RecurrenceRule) || null,
+        reminder_minutes_before: reminderMinutes,
+        email_reminder_to: reminderEmail.trim() || null,
         tags: tags.trim() || null,
       });
       onClose();
@@ -339,7 +346,13 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 <input
                   type="datetime-local"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                    if (!e.target.value) {
+                      setReminderMinutes(null);
+                      setReminderEmail('');
+                    }
+                  }}
                   className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
                 />
               </div>
@@ -362,6 +375,15 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 />
               </div>
             </div>
+
+            <ReminderField
+              id="edit-task-reminder"
+              dueDate={dueDate}
+              value={reminderMinutes}
+              onChange={setReminderMinutes}
+              email={reminderEmail}
+              onEmailChange={setReminderEmail}
+            />
 
             {/* Tags */}
             <div>

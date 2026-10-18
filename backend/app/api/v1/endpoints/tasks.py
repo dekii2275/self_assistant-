@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.crud import task as crud_task
 from app.schemas.task import (
     TaskCreate,
@@ -46,6 +47,16 @@ async def create_new_task(
     return await crud_task.create_task(db=db, task_in=task_in)
 
 
+@router.post("/reminders/claim", response_model=List[TaskResponse], summary="Lấy các lời nhắc đến giờ")
+async def claim_reminders(db: AsyncSession = Depends(get_db)):
+    return await crud_task.claim_due_reminders(db)
+
+
+@router.get("/reminders/email-status", summary="Trạng thái cấu hình email nhắc việc")
+def email_reminder_status():
+    return {"configured": settings.email_reminders_configured}
+
+
 @router.get("/{task_id}", response_model=TaskResponse, summary="Xem chi tiết một công việc")
 async def read_task(
     task_id: int,
@@ -66,7 +77,10 @@ async def update_task(
     db_task = await crud_task.get_task_by_id(db=db, task_id=task_id)
     if not db_task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy công việc")
-    return await crud_task.update_task(db=db, db_task=db_task, task_in=task_in)
+    try:
+        return await crud_task.update_task(db=db, db_task=db_task, task_in=task_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
 @router.patch("/{task_id}/toggle", response_model=TaskResponse, summary="Đánh dấu hoàn thành / chưa hoàn thành")

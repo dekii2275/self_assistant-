@@ -10,6 +10,7 @@ import { PomodoroTimer } from './components/PomodoroTimer';
 import { OverviewView } from './components/OverviewView';
 import { WeeklyTimetable } from './components/WeeklyTimetable';
 import { StudySpace } from './components/StudySpace';
+import { TaskReminders } from './components/TaskReminders';
 import { taskApi } from './services/api';
 import { localDateKey, dueDateKey } from './utils/date';
 import type { Task, TaskCreateInput, TaskUpdateInput, Priority, Subtask } from './types/task';
@@ -133,6 +134,17 @@ export function App() {
     return () => clearInterval(interval);
   }, [fetchTasks, isBackendOnline]);
 
+  useEffect(() => {
+    if (!isBackendOnline) return;
+    const interval = setInterval(() => { void fetchTasks(false); }, 60000);
+    const onFocus = () => { void fetchTasks(false); };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [fetchTasks, isBackendOnline]);
+
   // Global Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -172,6 +184,7 @@ export function App() {
       if (pomodoroActiveTask?.id === id) {
         setPomodoroActiveTask(updated);
       }
+      if (updated.is_completed && updated.recurrence_rule) void fetchTasks(false);
     } catch (err) {
       console.error('Error updating task:', err);
       throw err;
@@ -185,6 +198,7 @@ export function App() {
       if (editingTask?.id === id) {
         setEditingTask(updated);
       }
+      if (updated.is_completed && updated.recurrence_rule) void fetchTasks(false);
     } catch (err) {
       console.error('Error toggling task:', err);
       alert('Không thể cập nhật công việc. Vui lòng kiểm tra kết nối Backend.');
@@ -513,6 +527,16 @@ export function App() {
         activeTask={pomodoroActiveTask?.id && pomodoroActiveTask.id > 0 ? pomodoroActiveTask : null}
         onSelectTask={(task) => setPomodoroActiveTask(task)}
         onLogPomodoro={handleLogPomodoro}
+      />
+
+      <TaskReminders
+        enabled={isBackendOnline}
+        onOpenTask={(id) => {
+          void taskApi.getTask(id).then((task) => {
+            setEditingTask(task);
+            setCurrentView('tasks');
+          }).catch(() => setErrorNotice('Không thể mở nhiệm vụ từ lời nhắc. Vui lòng tải lại danh sách.'));
+        }}
       />
     </div>
   );

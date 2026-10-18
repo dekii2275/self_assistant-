@@ -55,6 +55,16 @@ export const taskApi = {
     await apiClient.delete(`/tasks/${id}`);
   },
 
+  async claimReminders(): Promise<Task[]> {
+    const res = await apiClient.post<Task[]>('/tasks/reminders/claim');
+    return res.data;
+  },
+
+  async getEmailReminderStatus(): Promise<{ configured: boolean }> {
+    const res = await apiClient.get<{ configured: boolean }>('/tasks/reminders/email-status');
+    return res.data;
+  },
+
   // -------------------------------------------------------------
   // Subtasks API
   // -------------------------------------------------------------

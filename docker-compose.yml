@@ -44,6 +44,13 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_this_secure_password}
       - POSTGRES_DB=${POSTGRES_DB:-assistant_db}
       - BACKEND_CORS_ORIGINS=["http://localhost:5274","http://127.0.0.1:5274"]
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_SECURITY=${SMTP_SECURITY:-starttls}
+      - REMINDER_TIMEZONE=${REMINDER_TIMEZONE:-Asia/Bangkok}
     ports:
       - "${BACKEND_PORT:-8974}:8000"
     volumes:

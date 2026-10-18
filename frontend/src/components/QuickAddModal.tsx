@@ -12,8 +12,9 @@ import {
   AlignLeft,
   Repeat,
 } from 'lucide-react';
-import type { Priority, TaskCreateInput, RecurrenceRule } from '../types/task';
+import type { Priority, TaskCreateInput, RecurrenceRule, ReminderMinutes } from '../types/task';
 import { prepareTaskText } from '../utils/taskDraft';
+import { ReminderField } from './ReminderField';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | ''>('');
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | ''>('');
+  const [reminderMinutes, setReminderMinutes] = useState<ReminderMinutes | null>(null);
+  const [reminderEmail, setReminderEmail] = useState('');
   const [tags, setTags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -56,6 +59,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       setDueDate('');
       setEstimatedMinutes('');
       setRecurrenceRule('');
+      setReminderMinutes(null);
+      setReminderEmail('');
       setTags('');
     }
   }, [isOpen, defaultPriority, defaultDueDate]);
@@ -71,6 +76,10 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       inputRef.current?.focus();
       return;
     }
+    if (reminderEmail.trim() && !reminderMinutes) {
+      setFormError('Chọn thời điểm nhắc trước khi nhập email.');
+      return;
+    }
 
     try {
       setFormError(null);
@@ -81,6 +90,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
         estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : undefined,
         recurrence_rule: (recurrenceRule as RecurrenceRule) || null,
+        reminder_minutes_before: reminderMinutes,
+        email_reminder_to: reminderEmail.trim() || null,
         tags: tags.trim() || undefined,
         status: 'todo',
       });
@@ -148,7 +159,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-10 animate-in zoom-in-95 duration-150">
         <form onSubmit={handleSubmit} onKeyDown={(event) => {
           if (!(event.target instanceof HTMLButtonElement) && (event.ctrlKey || event.metaKey) && event.key === 'Enter') {
             event.preventDefault();
@@ -256,7 +267,13 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 <input
                   type="datetime-local"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                    if (!e.target.value) {
+                      setReminderMinutes(null);
+                      setReminderEmail('');
+                    }
+                  }}
                   className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
                 />
                 <div className="flex items-center gap-1 pt-0.5">
@@ -337,6 +354,15 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 </div>
               </div>
             </div>
+
+            <ReminderField
+              id="new-task-reminder"
+              dueDate={dueDate}
+              value={reminderMinutes}
+              onChange={setReminderMinutes}
+              email={reminderEmail}
+              onEmailChange={setReminderEmail}
+            />
 
             {/* Tags */}
             <div className="space-y-1 pt-1">

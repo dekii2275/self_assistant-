@@ -1,6 +1,7 @@
 export type Priority = 'p1' | 'p2' | 'p3' | 'p4';
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type RecurrenceRule = 'daily' | 'weekdays' | 'weekly' | 'monthly';
+export type ReminderMinutes = 10 | 60 | 1440;
 
 export interface Subtask {
   id: number;
@@ -18,6 +19,8 @@ export interface Task {
   status: TaskStatus;
   is_completed: boolean;
   due_date?: string | null;
+  reminder_minutes_before?: ReminderMinutes | null;
+  email_reminder_to?: string | null;
   estimated_minutes?: number | null;
   actual_minutes: number;
   recurrence_rule?: RecurrenceRule | null;
@@ -33,6 +36,8 @@ export interface TaskCreateInput {
   priority?: Priority;
   status?: TaskStatus;
   due_date?: string;
+  reminder_minutes_before?: ReminderMinutes | null;
+  email_reminder_to?: string | null;
   estimated_minutes?: number;
   actual_minutes?: number;
   recurrence_rule?: RecurrenceRule | null;
@@ -47,6 +52,8 @@ export interface TaskUpdateInput {
   status?: TaskStatus;
   is_completed?: boolean;
   due_date?: string | null;
+  reminder_minutes_before?: ReminderMinutes | null;
+  email_reminder_to?: string | null;
   estimated_minutes?: number | null;
   actual_minutes?: number;
   recurrence_rule?: RecurrenceRule | null;
