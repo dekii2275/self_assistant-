@@ -170,11 +170,15 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const initialDrawingDataRef = useRef(currentDrawingData || '');
+  const imageLoadVersionRef = useRef(0);
+  const restoringDrawingRef = useRef<string | null>(null);
 
   const [activeTool, setActiveTool] = useState<DrawingTool>('pen');
   const [activeColor, setActiveColor] = useState<string>('#1e293b');
   const [strokeWidth, setStrokeWidth] = useState<number>(4);
   const [canvasBg, setCanvasBg] = useState<CanvasBackground>(currentPage?.background || 'grid');
+  const canvasBgRef = useRef(canvasBg);
 
   // History stack for Undo / Redo (stores DataURL strings to survive window resize)
   const [history, setHistory] = useState<string[]>(() => [currentDrawingData || '']);
@@ -182,15 +186,23 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
   // Drawing in progress refs
   const isDrawing = useRef(false);
+  const activePointerId = useRef<number | null>(null);
+  const didMove = useRef(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const snapshotData = useRef<ImageData | null>(null);
 
   // Sticky Notes on the current page
   const [stickyNotes, setStickyNotes] = useState<StickyNoteItem[]>(currentPage?.stickyNotes || []);
   const draggingStickyRef = useRef<{
     id: string;
+    pointerId: number;
     offsetX: number;
     offsetY: number;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
   } | null>(null);
 
   // Text Tool State (Multi-line & rich options)
@@ -420,32 +432,40 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
-    const w = Math.max(rect.width, 400);
-    const h = Math.max(rect.height, 500);
+    const w = Math.max(rect.width, 1);
+    const h = Math.max(rect.height, 1);
+    const pixelWidth = Math.floor(w * dpr);
+    const pixelHeight = Math.floor(h * dpr);
+    if (drawingCanvas.width === pixelWidth && drawingCanvas.height === pixelHeight) return;
+    const loadVersion = ++imageLoadVersionRef.current;
+    isDrawing.current = false;
+    activePointerId.current = null;
 
     // Save existing drawing dataURL before resizing dimensions
     let existingDataURL: string | null = null;
-    if (drawingCanvas.width > 0 && drawingCanvas.height > 0) {
+    if (restoringDrawingRef.current) {
+      existingDataURL = restoringDrawingRef.current;
+    } else if (drawingCanvas.width > 0 && drawingCanvas.height > 0) {
       existingDataURL = drawingCanvas.toDataURL();
-    } else if (currentDrawingData) {
-      existingDataURL = currentDrawingData;
+    } else if (initialDrawingDataRef.current) {
+      existingDataURL = initialDrawingDataRef.current;
     }
 
     // Set background canvas dimensions
-    bgCanvas.width = Math.floor(w * dpr);
-    bgCanvas.height = Math.floor(h * dpr);
+    bgCanvas.width = pixelWidth;
+    bgCanvas.height = pixelHeight;
     bgCanvas.style.width = `${w}px`;
     bgCanvas.style.height = `${h}px`;
 
     const bgCtx = bgCanvas.getContext('2d');
     if (bgCtx) {
       bgCtx.scale(dpr, dpr);
-      redrawBackground(bgCtx, w, h, canvasBg);
+      redrawBackground(bgCtx, w, h, canvasBgRef.current);
     }
 
     // Set drawing canvas dimensions
-    drawingCanvas.width = Math.floor(w * dpr);
-    drawingCanvas.height = Math.floor(h * dpr);
+    drawingCanvas.width = pixelWidth;
+    drawingCanvas.height = pixelHeight;
     drawingCanvas.style.width = `${w}px`;
     drawingCanvas.style.height = `${h}px`;
 
@@ -456,16 +476,24 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
     // Restore drawing if existed
     if (existingDataURL && existingDataURL.length > 30) {
+      restoringDrawingRef.current = existingDataURL;
       const img = new Image();
       img.onload = () => {
-        // Draw image onto drawing canvas preserving scale
-        drawCtx.drawImage(img, 0, 0, w, h);
+        if (loadVersion !== imageLoadVersionRef.current) return;
+        drawCtx.save();
+        drawCtx.setTransform(1, 0, 0, 1, 0, 0);
+        drawCtx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+        drawCtx.restore();
+        restoringDrawingRef.current = null;
+      };
+      img.onerror = () => {
+        if (loadVersion === imageLoadVersionRef.current) restoringDrawingRef.current = null;
       };
       img.src = existingDataURL;
     }
-  }, [canvasBg, currentDrawingData, redrawBackground]);
+  }, [redrawBackground]);
 
-  // Re-init canvas on mount & window resize (debounced to avoid async image wipe-out)
+  // Match the canvas to its container, including sidebar and layout changes.
   useEffect(() => {
     initDualCanvas();
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -476,21 +504,27 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
       }, 120);
     };
     window.addEventListener('resize', handleResize);
+    const observer = typeof ResizeObserver !== 'undefined' && containerRef.current
+      ? new ResizeObserver(handleResize)
+      : null;
+    if (containerRef.current) observer?.observe(containerRef.current);
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       window.removeEventListener('resize', handleResize);
+      observer?.disconnect();
     };
   }, [initDualCanvas]);
 
   // When changing background style, redraw bgCanvas ONLY without touching drawingCanvas!
   useEffect(() => {
+    canvasBgRef.current = canvasBg;
     const bgCanvas = bgCanvasRef.current;
     const container = containerRef.current;
     if (!bgCanvas || !container) return;
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    const w = Math.max(rect.width, 400);
-    const h = Math.max(rect.height, 500);
+    const w = Math.max(rect.width, 1);
+    const h = Math.max(rect.height, 1);
 
     const bgCtx = bgCanvas.getContext('2d');
     if (bgCtx) {
@@ -514,6 +548,34 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
   // ----------------------------------------------------
   // 4. UNDO / REDO HISTORY MANAGEMENT (DataURL based)
   // ----------------------------------------------------
+  const restoreDrawing = useCallback((dataURL: string) => {
+    const canvas = drawingCanvasRef.current;
+    const ctx = canvas?.getContext('2d', { willReadFrequently: true });
+    if (!canvas || !ctx) return;
+
+    const loadVersion = ++imageLoadVersionRef.current;
+    restoringDrawingRef.current = dataURL || null;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    if (!dataURL) return;
+
+    const img = new Image();
+    img.onload = () => {
+      if (loadVersion !== imageLoadVersionRef.current || canvas !== drawingCanvasRef.current) return;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      restoringDrawingRef.current = null;
+    };
+    img.onerror = () => {
+      if (loadVersion === imageLoadVersionRef.current) restoringDrawingRef.current = null;
+    };
+    img.src = dataURL;
+  }, []);
+
   const pushHistorySnapshot = useCallback(() => {
     const drawingCanvas = drawingCanvasRef.current;
     if (!drawingCanvas) return;
@@ -540,78 +602,25 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     if (historyIndex <= 0) return;
     const targetIndex = historyIndex - 1;
     const targetDataURL = history[targetIndex];
-    const drawingCanvas = drawingCanvasRef.current;
-    const container = containerRef.current;
-    if (!drawingCanvas || !container || targetDataURL === undefined) return;
-
-    const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-
-    if (!targetDataURL) {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-      ctx.restore();
-      setHistoryIndex(targetIndex);
-      setPages((prev) => prev.map((p) =>
-        p.id === activePageId ? { ...p, drawingData: '', updatedAt: Date.now() } : p
-      ));
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-      ctx.scale(dpr, dpr);
-      ctx.drawImage(img, 0, 0, rect.width, rect.height);
-      ctx.restore();
-      setHistoryIndex(targetIndex);
-
-      // Save updated state
-      setPages((prev) =>
-        prev.map((p) =>
-          p.id === activePageId ? { ...p, drawingData: targetDataURL, updatedAt: Date.now() } : p
-        )
-      );
-    };
-    img.src = targetDataURL;
-  }, [historyIndex, history, activePageId]);
+    if (targetDataURL === undefined) return;
+    restoreDrawing(targetDataURL);
+    setHistoryIndex(targetIndex);
+    setPages((prev) => prev.map((p) =>
+      p.id === activePageId ? { ...p, drawingData: targetDataURL, updatedAt: Date.now() } : p
+    ));
+  }, [historyIndex, history, activePageId, restoreDrawing]);
 
   const handleRedo = useCallback(() => {
     if (historyIndex >= history.length - 1) return;
     const targetIndex = historyIndex + 1;
     const targetDataURL = history[targetIndex];
-    const drawingCanvas = drawingCanvasRef.current;
-    const container = containerRef.current;
-    if (!drawingCanvas || !container || !targetDataURL) return;
-
-    const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-      ctx.scale(dpr, dpr);
-      ctx.drawImage(img, 0, 0, rect.width, rect.height);
-      ctx.restore();
-      setHistoryIndex(targetIndex);
-
-      setPages((prev) =>
-        prev.map((p) =>
-          p.id === activePageId ? { ...p, drawingData: targetDataURL, updatedAt: Date.now() } : p
-        )
-      );
-    };
-    img.src = targetDataURL;
-  }, [historyIndex, history, activePageId]);
+    if (targetDataURL === undefined) return;
+    restoreDrawing(targetDataURL);
+    setHistoryIndex(targetIndex);
+    setPages((prev) => prev.map((p) =>
+      p.id === activePageId ? { ...p, drawingData: targetDataURL, updatedAt: Date.now() } : p
+    ));
+  }, [historyIndex, history, activePageId, restoreDrawing]);
 
   const handleClearBoard = () => {
     const drawingCanvas = drawingCanvasRef.current;
@@ -619,6 +628,8 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
+    imageLoadVersionRef.current += 1;
+    restoringDrawingRef.current = null;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -670,7 +681,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.button !== 0) return; // Only primary mouse click / touch
+    if (e.button !== 0 || isDrawing.current || restoringDrawingRef.current) return;
     const drawingCanvas = drawingCanvasRef.current;
     if (!drawingCanvas) return;
     const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
@@ -690,6 +701,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
       return;
     }
 
+    imageLoadVersionRef.current += 1;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -697,7 +709,10 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     }
 
     isDrawing.current = true;
+    activePointerId.current = e.pointerId;
+    didMove.current = false;
     startPos.current = { x, y };
+    lastPos.current = { x, y };
 
     // Save snapshot before dragging shapes
     snapshotData.current = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -728,7 +743,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing.current) return;
+    if (!isDrawing.current || activePointerId.current !== e.pointerId) return;
     const drawingCanvas = drawingCanvasRef.current;
     if (!drawingCanvas) return;
     const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
@@ -737,10 +752,14 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     let { x, y } = getCanvasCoords(e);
     const sx = startPos.current.x;
     const sy = startPos.current.y;
+    if (Math.hypot(x - lastPos.current.x, y - lastPos.current.y) < 0.5) return;
+    didMove.current = true;
 
     if (activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser') {
       ctx.lineTo(x, y);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
     } else {
       // Restore snapshot to clear previous shape preview
       if (snapshotData.current) {
@@ -815,11 +834,14 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
       }
       ctx.restore();
     }
+    lastPos.current = { x, y };
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing.current) return;
+    if (!isDrawing.current || activePointerId.current !== e.pointerId) return;
+    handlePointerMove(e);
     isDrawing.current = false;
+    activePointerId.current = null;
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
@@ -830,9 +852,27 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     if (!drawingCanvas) return;
     const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
+    if (!didMove.current && (activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser')) {
+      ctx.beginPath();
+      ctx.arc(startPos.current.x, startPos.current.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
+    }
     ctx.restore();
+    snapshotData.current = null;
+    if (didMove.current || activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser') {
+      pushHistorySnapshot();
+    }
+  };
 
-    pushHistorySnapshot();
+  const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing.current || activePointerId.current !== e.pointerId) return;
+    isDrawing.current = false;
+    activePointerId.current = null;
+    const ctx = drawingCanvasRef.current?.getContext('2d', { willReadFrequently: true });
+    if (ctx && snapshotData.current) ctx.putImageData(snapshotData.current, 0, 0);
+    ctx?.restore();
+    snapshotData.current = null;
   };
 
   // ----------------------------------------------------
@@ -876,8 +916,8 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
     const newNote: StickyNoteItem = {
       id: `sticky_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      x: Math.max(40, w / 2 - 90 + (Math.random() * 40 - 20)),
-      y: Math.max(60, h / 2 - 80 + (Math.random() * 40 - 20)),
+      x: Math.max(10, Math.min(w / 2 - 90 + (Math.random() * 40 - 20), w - 200)),
+      y: Math.max(10, Math.min(h / 2 - 80 + (Math.random() * 40 - 20), h - 170)),
       width: 190,
       height: 160,
       content: '',
@@ -935,6 +975,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
   // Sticky drag & drop handlers
   const handleStickyPointerDown = (id: string, e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
     const note = stickyNotes.find((n) => n.id === id);
     if (!note) return;
     try {
@@ -944,26 +985,36 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     }
     draggingStickyRef.current = {
       id,
+      pointerId: e.pointerId,
       offsetX: e.clientX - note.x,
       offsetY: e.clientY - note.y,
+      width: note.width,
+      height: note.height,
+      x: note.x,
+      y: note.y,
     };
   };
 
   const handleStickyPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingStickyRef.current) return;
-    const { id, offsetX, offsetY } = draggingStickyRef.current;
+    const dragging = draggingStickyRef.current;
+    if (!dragging || dragging.pointerId !== e.pointerId) return;
+    const { id, offsetX, offsetY } = dragging;
     const container = containerRef.current;
-    const maxW = Math.max(100, (container?.clientWidth || 800) - 80);
-    const maxH = Math.max(100, (container?.clientHeight || 600) - 80);
+    const maxW = Math.max(10, (container?.clientWidth || 800) - dragging.width - 10);
+    const maxH = Math.max(10, (container?.clientHeight || 600) - dragging.height - 10);
 
     const newX = Math.max(10, Math.min(e.clientX - offsetX, maxW));
     const newY = Math.max(10, Math.min(e.clientY - offsetY, maxH));
 
+    dragging.x = newX;
+    dragging.y = newY;
     setStickyNotes((prev) => prev.map((n) => (n.id === id ? { ...n, x: newX, y: newY } : n)));
   };
 
   const handleStickyPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingStickyRef.current) return;
+    if (!draggingStickyRef.current || draggingStickyRef.current.pointerId !== e.pointerId) return;
+    handleStickyPointerMove(e);
+    const { id, x, y } = draggingStickyRef.current;
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
@@ -974,7 +1025,9 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     // Trigger save after drag finishes
     setPages((prev) => {
       const updatedPages = prev.map((p) =>
-        p.id === activePageId ? { ...p, stickyNotes, updatedAt: Date.now() } : p
+        p.id === activePageId
+          ? { ...p, stickyNotes: p.stickyNotes.map((n) => n.id === id ? { ...n, x, y } : n), updatedAt: Date.now() }
+          : p
       );
       triggerAutoSave(updatedPages, activePageId, docTitle);
       return updatedPages;
@@ -989,7 +1042,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
     // 1. Save current drawing & stickies to current page
     const drawingCanvas = drawingCanvasRef.current;
-    const currentDataURL = drawingCanvas?.toDataURL() || '';
+    const currentDataURL = restoringDrawingRef.current || drawingCanvas?.toDataURL() || '';
 
     const updatedPages = pages.map((p) =>
       p.id === activePageId
@@ -1006,35 +1059,9 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     setCanvasBg(targetPage.background || 'grid');
     setStickyNotes(targetPage.stickyNotes || []);
 
-    // 3. Render target drawing canvas
-    if (drawingCanvas) {
-      const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-        const dpr = window.devicePixelRatio || 1;
-        ctx.scale(dpr, dpr);
-
-        if (targetPage.drawingData) {
-          const img = new Image();
-          img.onload = () => {
-            const container = containerRef.current;
-            const w = container?.clientWidth || 800;
-            const h = container?.clientHeight || 600;
-            ctx.drawImage(img, 0, 0, w, h);
-            ctx.restore();
-            setHistory([targetPage.drawingData]);
-            setHistoryIndex(0);
-          };
-          img.src = targetPage.drawingData;
-        } else {
-          ctx.restore();
-          setHistory(['']);
-          setHistoryIndex(0);
-        }
-      }
-    }
+    restoreDrawing(targetPage.drawingData);
+    setHistory([targetPage.drawingData]);
+    setHistoryIndex(0);
 
     triggerAutoSave(updatedPages, targetPageId, docTitle);
   };
@@ -1042,7 +1069,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
   const handleAddNewPage = () => {
     // 1. Save current drawing first
     const drawingCanvas = drawingCanvasRef.current;
-    const currentDataURL = drawingCanvas?.toDataURL() || '';
+    const currentDataURL = restoringDrawingRef.current || drawingCanvas?.toDataURL() || '';
 
     const newPageId = `page_${Date.now()}`;
     const newPage: StudyPage = {
@@ -1066,16 +1093,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     setActivePageId(newPageId);
     setStickyNotes([]);
 
-    // Clear drawing canvas for brand new page
-    if (drawingCanvas) {
-      const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-        ctx.restore();
-      }
-    }
+    restoreDrawing('');
     setHistory(['']);
     setHistoryIndex(0);
 
@@ -1093,35 +1111,9 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
     setCanvasBg(nextActive.background || 'grid');
     setStickyNotes(nextActive.stickyNotes || []);
 
-    const drawingCanvas = drawingCanvasRef.current;
-    if (drawingCanvas) {
-      const ctx = drawingCanvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-        const dpr = window.devicePixelRatio || 1;
-        ctx.scale(dpr, dpr);
-
-        if (nextActive.drawingData) {
-          const img = new Image();
-          img.onload = () => {
-            const container = containerRef.current;
-            const w = container?.clientWidth || 800;
-            const h = container?.clientHeight || 600;
-            ctx.drawImage(img, 0, 0, w, h);
-            ctx.restore();
-            setHistory([nextActive.drawingData]);
-            setHistoryIndex(0);
-          };
-          img.src = nextActive.drawingData;
-        } else {
-          ctx.restore();
-          setHistory(['']);
-          setHistoryIndex(0);
-        }
-      }
-    }
+    restoreDrawing(nextActive.drawingData);
+    setHistory([nextActive.drawingData]);
+    setHistoryIndex(0);
 
     triggerAutoSave(remaining, nextActive.id, docTitle);
   };
@@ -1944,9 +1936,9 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
         {/* LEFT / CENTER: Dual-layer Canvas Area & Toolbar */}
         <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden bg-[#eaf0eb]">
           {/* FLOATING DRAWING TOOLBAR */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 p-1.5 bg-white/95 dark:bg-[#1e392a]/95 backdrop-blur-md rounded-2xl shadow-lg border border-emerald-100 dark:border-[#2f553f] max-w-[95vw] overflow-x-auto scrollbar-none">
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-center gap-1 p-1.5 bg-white/95 dark:bg-[#1e392a]/95 backdrop-blur-md rounded-2xl shadow-lg border border-emerald-100 dark:border-[#2f553f] overflow-hidden">
             {/* Drawing Tools */}
-            <div className="flex items-center gap-0.5 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
+            <div className="flex shrink-0 items-center gap-0.5 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
               <button
                 onClick={() => setActiveTool('pen')}
                 className={`p-2 rounded-xl transition-all ${
@@ -1973,193 +1965,201 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
 
               <button
                 onClick={() => setActiveTool('eraser')}
-                className={`p-2 rounded-xl transition-all ${
+                className={`flex items-center gap-1 px-2 py-2 rounded-xl transition-all ${
                   activeTool === 'eraser'
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
                 }`}
-                title="Cục tẩy (Eraser) - Không bao giờ làm thủng nền ô ly!"
+                title="Tẩy nét vẽ (giữ nguyên nền giấy)"
+                aria-label="Tẩy nét vẽ"
+                aria-pressed={activeTool === 'eraser'}
               >
                 <Eraser className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTool('line')}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTool === 'line'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                }`}
-                title="Đường thẳng (Giữ Shift để vẽ ngang/dọc/chéo 45°)"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTool('arrow')}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTool === 'arrow'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                }`}
-                title="Mũi tên (Dành cho sơ đồ tư duy)"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTool('rect')}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTool === 'rect'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                }`}
-                title="Hình chữ nhật (Giữ Shift để vẽ hình vuông chuẩn)"
-              >
-                <Square className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTool('circle')}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTool === 'circle'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                }`}
-                title="Hình tròn / Ellipse (Giữ Shift để vẽ hình tròn chuẩn)"
-              >
-                <Circle className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTool('text')}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTool === 'text'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                }`}
-                title="Thêm văn bản nhiều dòng (Multi-line Text)"
-              >
-                <Type className="w-4 h-4" />
-              </button>
-
-              {/* STICKY NOTE BUTTON */}
-              <button
-                onClick={handleAddStickyNote}
-                className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all"
-                title="Dán giấy ghi chú (Sticky Note)"
-              >
-                <StickyIcon className="w-4 h-4" />
+                <span className="text-xs font-semibold">Tẩy</span>
               </button>
             </div>
 
-            {/* Basic Colors Palette */}
-            <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
-              {BASIC_COLORS.map((c) => (
+            <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+              <div className="flex shrink-0 items-center gap-0.5 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
                 <button
-                  key={c.value}
-                  onClick={() => setActiveColor(c.value)}
-                  className={`w-5 h-5 rounded-full transition-transform ring-offset-1 ${
-                    activeColor === c.value
-                      ? 'ring-2 ring-emerald-500 scale-110 shadow-xs'
-                      : 'hover:scale-105'
-                  }`}
-                  style={{
-                    backgroundColor: c.value,
-                    border: c.value === '#ffffff' ? '1px solid #cbd5e1' : 'none',
-                  }}
-                  title={c.label}
-                />
-              ))}
-
-              {/* Custom Color Input */}
-              <label className="relative cursor-pointer ml-0.5" title="Chọn màu tùy thích">
-                <input
-                  type="color"
-                  value={activeColor}
-                  onChange={(e) => setActiveColor(e.target.value)}
-                  className="opacity-0 w-0 h-0 absolute"
-                />
-                <div
-                  className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs flex items-center justify-center text-[9px] font-bold"
-                  style={{ backgroundColor: activeColor }}
-                >
-                  🌈
-                </div>
-              </label>
-            </div>
-
-            {/* Stroke Width Selector */}
-            <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
-              {STROKE_WIDTHS.map((sw) => (
-                <button
-                  key={sw.value}
-                  onClick={() => setStrokeWidth(sw.value)}
-                  className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                    strokeWidth === sw.value
-                      ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800 dark:text-white'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#284d37]'
-                  }`}
-                  title={`Cỡ nét: ${sw.label}`}
-                >
-                  {sw.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Canvas Background Paper Selector */}
-            <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
-              {(
-                [
-                  { id: 'grid', label: 'Ô ly' },
-                  { id: 'lined', label: 'Kẻ ngang' },
-                  { id: 'dots', label: 'Chấm bi' },
-                  { id: 'chalkboard', label: 'Bảng phấn' },
-                  { id: 'blank', label: 'Trơn' },
-                ] as const
-              ).map((bgItem) => (
-                <button
-                  key={bgItem.id}
-                  onClick={() => setCanvasBg(bgItem.id)}
-                  className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                    canvasBg === bgItem.id
-                      ? 'bg-[#21472f] text-white shadow-2xs'
+                  onClick={() => setActiveTool('line')}
+                  className={`p-2 rounded-xl transition-all ${
+                    activeTool === 'line'
+                      ? 'bg-emerald-700 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
                   }`}
-                  title={`Đổi nền giấy sang ${bgItem.label} (Không làm mất nét vẽ)`}
+                  title="Đường thẳng (Giữ Shift để vẽ ngang/dọc/chéo 45°)"
                 >
-                  {bgItem.label}
+                  <Minus className="w-4 h-4" />
                 </button>
-              ))}
-            </div>
 
-            {/* Undo / Redo / Clear */}
-            <div className="flex items-center gap-0.5">
-              <button
-                onClick={handleUndo}
-                disabled={historyIndex <= 0}
-                className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37] disabled:opacity-30 transition-all"
-                title="Hoàn tác (Ctrl+Z)"
-              >
-                <Undo2 className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => setActiveTool('arrow')}
+                  className={`p-2 rounded-xl transition-all ${
+                    activeTool === 'arrow'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                  }`}
+                  title="Mũi tên (Dành cho sơ đồ tư duy)"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </button>
 
-              <button
-                onClick={handleRedo}
-                disabled={historyIndex >= history.length - 1}
-                className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37] disabled:opacity-30 transition-all"
-                title="Làm lại (Ctrl+Y)"
-              >
-                <Redo2 className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => setActiveTool('rect')}
+                  className={`p-2 rounded-xl transition-all ${
+                    activeTool === 'rect'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                  }`}
+                  title="Hình chữ nhật (Giữ Shift để vẽ hình vuông chuẩn)"
+                >
+                  <Square className="w-4 h-4" />
+                </button>
 
-              <button
-                onClick={() => setShowClearConfirm(true)}
-                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
-                title="Xóa trắng bảng vẽ trang này"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => setActiveTool('circle')}
+                  className={`p-2 rounded-xl transition-all ${
+                    activeTool === 'circle'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                  }`}
+                  title="Hình tròn / Ellipse (Giữ Shift để vẽ hình tròn chuẩn)"
+                >
+                  <Circle className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setActiveTool('text')}
+                  className={`p-2 rounded-xl transition-all ${
+                    activeTool === 'text'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                  }`}
+                  title="Thêm văn bản nhiều dòng (Multi-line Text)"
+                >
+                  <Type className="w-4 h-4" />
+                </button>
+
+                {/* STICKY NOTE BUTTON */}
+                <button
+                  onClick={handleAddStickyNote}
+                  className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all"
+                  title="Dán giấy ghi chú (Sticky Note)"
+                >
+                  <StickyIcon className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Basic Colors Palette */}
+              <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
+                {BASIC_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setActiveColor(c.value)}
+                    className={`w-5 h-5 rounded-full transition-transform ring-offset-1 ${
+                      activeColor === c.value
+                        ? 'ring-2 ring-emerald-500 scale-110 shadow-xs'
+                        : 'hover:scale-105'
+                    }`}
+                    style={{
+                      backgroundColor: c.value,
+                      border: c.value === '#ffffff' ? '1px solid #cbd5e1' : 'none',
+                    }}
+                    title={c.label}
+                  />
+                ))}
+
+                {/* Custom Color Input */}
+                <label className="relative cursor-pointer ml-0.5" title="Chọn màu tùy thích">
+                  <input
+                    type="color"
+                    value={activeColor}
+                    onChange={(e) => setActiveColor(e.target.value)}
+                    aria-label="Chọn màu vẽ tùy thích"
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div
+                    className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs flex items-center justify-center text-[9px] font-bold"
+                    style={{ backgroundColor: activeColor }}
+                  >
+                    🌈
+                  </div>
+                </label>
+              </div>
+
+              {/* Stroke Width Selector */}
+              <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
+                {STROKE_WIDTHS.map((sw) => (
+                  <button
+                    key={sw.value}
+                    onClick={() => setStrokeWidth(sw.value)}
+                    className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      strokeWidth === sw.value
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800 dark:text-white'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                    }`}
+                    title={`Cỡ nét: ${sw.label}`}
+                  >
+                    {sw.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Canvas Background Paper Selector */}
+              <div className="flex items-center gap-1 border-r border-slate-200 dark:border-[#2d523c] pr-1.5 mr-0.5">
+                {(
+                  [
+                    { id: 'grid', label: 'Ô ly' },
+                    { id: 'lined', label: 'Kẻ ngang' },
+                    { id: 'dots', label: 'Chấm bi' },
+                    { id: 'chalkboard', label: 'Bảng phấn' },
+                    { id: 'blank', label: 'Trơn' },
+                  ] as const
+                ).map((bgItem) => (
+                  <button
+                    key={bgItem.id}
+                    onClick={() => setCanvasBg(bgItem.id)}
+                    className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      canvasBg === bgItem.id
+                        ? 'bg-[#21472f] text-white shadow-2xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37]'
+                    }`}
+                    title={`Đổi nền giấy sang ${bgItem.label} (Không làm mất nét vẽ)`}
+                  >
+                    {bgItem.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Undo / Redo / Clear */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={handleUndo}
+                  disabled={historyIndex <= 0}
+                  className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37] disabled:opacity-30 transition-all"
+                  title="Hoàn tác (Ctrl+Z)"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={handleRedo}
+                  disabled={historyIndex >= history.length - 1}
+                  className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#284d37] disabled:opacity-30 transition-all"
+                  title="Làm lại (Ctrl+Y)"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                  title="Xóa trắng bảng vẽ trang này"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2180,7 +2180,7 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
               className="absolute inset-0 block w-full h-full z-10"
             />
 
@@ -2205,7 +2205,8 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
                     onPointerDown={(e) => handleStickyPointerDown(note.id, e)}
                     onPointerMove={handleStickyPointerMove}
                     onPointerUp={handleStickyPointerUp}
-                    className="px-2.5 py-1.5 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-xl"
+                    onPointerCancel={handleStickyPointerUp}
+                    className="px-2.5 py-1.5 cursor-grab active:cursor-grabbing touch-none flex items-center justify-between rounded-t-xl"
                     style={{ backgroundColor: palette.header }}
                   >
                     {/* Color picker small dots */}
