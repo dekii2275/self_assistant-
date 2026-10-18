@@ -4,13 +4,11 @@ import {
   ChevronRight,
   Target,
   ArrowRight,
-  Laptop,
-  Smartphone,
-  Megaphone,
-  Users,
+  FolderKanban,
   Plus,
   Trash2,
   PenTool,
+  Clock,
 } from 'lucide-react';
 import type { Task, Goal } from '../types/task';
 import { goalApi } from '../services/api';
@@ -55,22 +53,24 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2">
+    <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2">
       {/* Month & Arrows */}
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black text-[#1b3826]">
+        <h3 className="text-xs font-bold text-slate-800">
           Tháng {month + 1}, {year}
         </h3>
         <div className="flex items-center gap-0.5">
           <button
             onClick={prevMonth}
-            className="p-1 rounded-lg text-[#558163] hover:bg-[#edf5ee] transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            title="Tháng trước"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={nextMonth}
-            className="p-1 rounded-lg text-[#558163] hover:bg-[#edf5ee] transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            title="Tháng sau"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -78,7 +78,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       </div>
 
       {/* Days of week */}
-      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold text-[#558163]">
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-semibold text-slate-400">
         {dayHeaders.map((dh) => (
           <div key={dh} className="py-0.5">
             {dh}
@@ -87,7 +87,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       </div>
 
       {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px]">
+      <div className="grid grid-cols-7 gap-0.5 text-center text-xs">
         {/* Leading empty cells */}
         {Array.from({ length: startingCol }).map((_, i) => (
           <div key={`empty-${i}`} className="h-6" />
@@ -105,17 +105,17 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
             <button
               key={dayNum}
               onClick={() => onSelectDate(isSelected ? null : dateStr)}
-              className={`h-6 w-6 mx-auto rounded-full font-bold flex flex-col items-center justify-center relative transition-all ${
+              className={`h-6 w-6 mx-auto rounded-md font-medium flex flex-col items-center justify-center relative transition-all text-xs ${
                 isSelected
-                  ? 'bg-[#3b754e] text-white shadow-2xs'
+                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
                   : isToday
-                  ? 'bg-[#20442c] text-white shadow-2xs font-black'
-                  : 'text-[#1e3c28] hover:bg-[#ebf4ec]'
+                  ? 'bg-slate-900 text-white font-bold'
+                  : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               <span>{dayNum}</span>
-              {hasTask && !isToday && !isSelected && (
-                <span className="w-1 h-1 rounded-full bg-emerald-600 -mt-0.5" />
+              {hasTask && !isSelected && (
+                <span className={`w-1 h-1 rounded-full ${isToday ? 'bg-emerald-400' : 'bg-emerald-600'} -mt-0.5`} />
               )}
             </button>
           );
@@ -126,7 +126,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 };
 
 // -------------------------------------------------------------
-// 2. Real Backend-Connected Daily Goals Widget (Zero Mock Data)
+// 2. Real Daily Goals Widget
 // -------------------------------------------------------------
 export const DailyGoalsWidget: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -182,20 +182,20 @@ export const DailyGoalsWidget: React.FC = () => {
   const progressPercent = goals.length > 0 ? Math.round((doneCount / goals.length) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
+    <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black text-[#1b3826] flex items-center gap-1.5">
+        <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
           <Target className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Mục tiêu hôm nay</span>
+          <span>Mục tiêu trong ngày</span>
         </h3>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-black text-emerald-800">
+          <span className="text-[11px] font-bold text-slate-500">
             {doneCount}/{goals.length}
           </span>
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="p-1 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors"
-            title="Thêm mục tiêu"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            title="Thêm mục tiêu mới"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -203,9 +203,9 @@ export const DailyGoalsWidget: React.FC = () => {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-[#ebf4ec] h-1.5 rounded-full overflow-hidden">
+      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
         <div
-          className="bg-gradient-to-r from-emerald-600 to-teal-500 h-full rounded-full transition-all duration-500"
+          className="bg-emerald-600 h-full rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -217,13 +217,13 @@ export const DailyGoalsWidget: React.FC = () => {
             type="text"
             value={newGoalTitle}
             onChange={(e) => setNewGoalTitle(e.target.value)}
-            placeholder="Nhập mục tiêu mới..."
+            placeholder="Nhập mục tiêu hôm nay..."
             autoFocus
-            className="flex-1 px-2.5 py-1 text-xs border border-emerald-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 bg-[#f9fbf9]"
+            className="flex-1 px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 bg-slate-50"
           />
           <button
             type="submit"
-            className="px-2 py-1 text-[11px] font-bold bg-[#265035] text-white rounded-lg hover:bg-[#1a3825]"
+            className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
             Lưu
           </button>
@@ -231,32 +231,32 @@ export const DailyGoalsWidget: React.FC = () => {
       )}
 
       {/* Goals Checklist */}
-      <div className="space-y-1.5 pt-0.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
+      <div className="space-y-1 pt-0.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
         {goals.length === 0 ? (
-          <div className="py-4 text-center text-[11px] text-[#638a6e]">
-            <p>Chưa có mục tiêu ngày.</p>
+          <div className="py-4 text-center text-xs text-slate-400">
+            <p>Chưa thiết lập mục tiêu nào.</p>
             <button
               onClick={() => setIsAdding(true)}
-              className="mt-1 font-bold text-emerald-800 hover:underline"
+              className="mt-1 font-semibold text-emerald-600 hover:underline"
             >
-              + Thêm mục tiêu ngay
+              + Thêm mục tiêu đầu tiên
             </button>
           </div>
         ) : (
           goals.map((goal) => (
             <div
               key={goal.id}
-              className="flex items-center justify-between gap-1.5 group select-none text-xs"
+              className="flex items-center justify-between gap-2 group select-none text-xs p-1 rounded-md hover:bg-slate-50"
             >
               <label
                 onClick={() => handleToggle(goal.id)}
-                className="flex items-center gap-2 font-medium text-[#1f3f2a] cursor-pointer flex-1 min-w-0"
+                className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer flex-1 min-w-0"
               >
                 <div
                   className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all shrink-0 ${
                     goal.is_completed
                       ? 'bg-emerald-600 border-emerald-600 text-white'
-                      : 'border-emerald-300 bg-white group-hover:border-emerald-600'
+                      : 'border-slate-300 bg-white group-hover:border-emerald-600'
                   }`}
                 >
                   {goal.is_completed && (
@@ -267,7 +267,7 @@ export const DailyGoalsWidget: React.FC = () => {
                 </div>
                 <span
                   className={`truncate leading-snug ${
-                    goal.is_completed ? 'line-through text-[#6d9478]' : 'text-[#1b3826]'
+                    goal.is_completed ? 'line-through text-slate-400' : 'text-slate-800'
                   }`}
                 >
                   {goal.title}
@@ -277,7 +277,7 @@ export const DailyGoalsWidget: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDelete(goal.id)}
-                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity"
                 title="Xóa mục tiêu"
               >
                 <Trash2 className="w-3 h-3" />
@@ -291,74 +291,79 @@ export const DailyGoalsWidget: React.FC = () => {
 };
 
 // -------------------------------------------------------------
-// 3. Otter Assistant Interactive Card
+// 3. Smart Briefing Card (Replaces AI slop mascot card)
 // -------------------------------------------------------------
-interface OtterAssistantCardProps {
+interface DailyBriefingCardProps {
   urgentCount: number;
   onViewList: () => void;
   onOpenStudySpace?: () => void;
 }
 
-export const OtterAssistantCard: React.FC<OtterAssistantCardProps> = ({
+export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({
   urgentCount,
   onViewList,
   onOpenStudySpace,
 }) => {
   return (
-    <div className="bg-gradient-to-br from-[#f8faf7] via-[#eff7f1] to-[#e4f3e7] rounded-2xl p-3 border border-[#d3e6d6] shadow-2xs relative overflow-hidden flex items-center justify-between gap-2.5">
-      <div className="space-y-1.5 max-w-[70%] z-10">
-        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/80 border border-emerald-200 text-[10px] font-black text-emerald-800">
-          <span>✨ Trợ lý Otter</span>
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl p-3.5 text-white shadow-xs flex items-center justify-between gap-3 relative overflow-hidden">
+      <div className="space-y-1.5 z-10 max-w-[72%]">
+        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300">
+          <Clock className="w-3 h-3 text-emerald-400" />
+          <span>Tóm tắt ngày</span>
         </div>
-        <p className="text-xs font-bold text-[#1b3826] leading-snug">
+
+        <p className="text-xs text-slate-200 leading-relaxed font-normal">
           {urgentCount > 0 ? (
             <>
-              Bạn còn <span className="text-rose-600 font-black">{urgentCount} việc gấp</span> hôm nay! 🍃 Cố lên nhé!
+              Bạn có <span className="text-rose-400 font-bold">{urgentCount} việc khẩn cấp (P1)</span> cần ưu tiên hoàn thành trước.
             </>
           ) : (
-            <>Hôm nay bạn đang tiến bộ rất tốt! 🌿 Hãy duy trì nhịp độ này nhé!</>
+            <>Tất cả các việc khẩn cấp đã được xử lý. Tiếp tục duy trì năng suất nhé!</>
           )}
         </p>
-        <div className="flex items-center gap-1.5 flex-wrap">
+
+        <div className="flex items-center gap-1.5 pt-0.5">
           <button
             onClick={onViewList}
-            className="inline-flex items-center gap-1 text-[10px] font-black text-white bg-[#224830] hover:bg-[#1a3825] px-2 py-1 rounded-lg shadow-2xs transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-md transition-colors shadow-2xs"
           >
-            <span>Xem việc</span>
-            <ArrowRight className="w-2.5 h-2.5" />
+            <span>Xem danh sách</span>
+            <ArrowRight className="w-3 h-3" />
           </button>
           {onOpenStudySpace && (
             <button
               onClick={onOpenStudySpace}
-              className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-2 py-1 rounded-lg shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 px-2 py-1 rounded-md transition-colors"
             >
-              <PenTool className="w-2.5 h-2.5 text-emerald-700" />
+              <PenTool className="w-3 h-3 text-emerald-400" />
               <span>Không gian học</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Mascot Image */}
-      <div className="w-16 h-16 shrink-0 relative">
+      {/* Subtle Otter avatar badge */}
+      <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 shrink-0 flex items-center justify-center shadow-xs">
         <img
           src="/otter-mascot.png"
-          alt="Trợ lý Otter"
-          className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform"
+          alt="Otter Workspace"
+          className="w-full h-full object-cover object-top opacity-90"
         />
       </div>
     </div>
   );
 };
 
+// Backward-compatible alias
+export const OtterAssistantCard = DailyBriefingCard;
+
 // -------------------------------------------------------------
-// 4. Real Projects Widget (Derived Directly From Backend Tasks)
+// 4. Active Projects Widget
 // -------------------------------------------------------------
 export const ActiveProjectsWidget: React.FC<{
   tasks: Task[];
   onSelectProjectTag: (tag: string) => void;
 }> = ({ tasks, onSelectProjectTag }) => {
-  // Compute real projects dynamically from tasks' tags
   const projects = useMemo(() => {
     const tagMap = new Map<string, { total: number; done: number }>();
 
@@ -377,25 +382,12 @@ export const ActiveProjectsWidget: React.FC<{
       });
     });
 
-    const icons = [Laptop, Smartphone, Megaphone];
-    const colors = [
-      { color: 'text-emerald-700 bg-emerald-100', bar: 'from-emerald-500 to-teal-500' },
-      { color: 'text-purple-700 bg-purple-100', bar: 'from-purple-500 to-indigo-500' },
-      { color: 'text-amber-700 bg-amber-100', bar: 'from-amber-500 to-orange-500' },
-    ];
-
-    return Array.from(tagMap.entries()).map(([tag, stat], idx) => {
+    return Array.from(tagMap.entries()).map(([tag, stat]) => {
       const progress = stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
-      const chosenIcon = icons[idx % icons.length];
-      const chosenColor = colors[idx % colors.length];
-
       return {
         id: tag,
         name: tag.charAt(0).toUpperCase() + tag.slice(1),
         tag,
-        icon: chosenIcon,
-        iconColor: chosenColor.color,
-        barColor: chosenColor.bar,
         progress,
         tasks: `${stat.done}/${stat.total}`,
       };
@@ -403,17 +395,18 @@ export const ActiveProjectsWidget: React.FC<{
   }, [tasks]);
 
   return (
-    <div className="bg-white rounded-2xl p-3 border border-[#e0ebe0] shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
+    <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2 flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black text-[#1b3826] flex items-center gap-1.5">
-          <span>📁 Dự án từ thẻ nhãn</span>
+        <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <FolderKanban className="w-3.5 h-3.5 text-slate-500" />
+          <span>Dự án theo nhãn</span>
         </h3>
         {projects.length > 0 && (
           <button
             onClick={() => onSelectProjectTag('all')}
-            className="text-[11px] font-bold text-[#3d6e4b] hover:underline flex items-center gap-0.5"
+            className="text-[11px] font-semibold text-emerald-600 hover:underline flex items-center gap-0.5"
           >
-            <span>Xem hết</span>
+            <span>Tất cả</span>
             <ArrowRight className="w-2.5 h-2.5" />
           </button>
         )}
@@ -421,47 +414,40 @@ export const ActiveProjectsWidget: React.FC<{
 
       <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
         {projects.length === 0 ? (
-          <div className="py-4 text-center text-[11px] text-[#638a6e] px-2">
+          <div className="py-4 text-center text-xs text-slate-400 px-2">
             <p>Chưa có dự án nào.</p>
-            <p className="text-[10px] text-[#7da388] mt-0.5">
-              Gắn thẻ nhãn (vd: <span className="font-mono font-bold">#du-an</span>, <span className="font-mono font-bold">#website</span>) vào công việc để tự động theo dõi dự án!
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Thêm thẻ nhãn vào nhiệm vụ để tự động theo dõi dự án.
             </p>
           </div>
         ) : (
-          projects.map((proj) => {
-            const Icon = proj.icon;
-            return (
-              <div
-                key={proj.id}
-                onClick={() => onSelectProjectTag(proj.tag)}
-                className="p-2 rounded-xl border border-[#e5efe5] hover:border-emerald-300 hover:bg-[#fafcfa] transition-all cursor-pointer space-y-1.5 select-none"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <div className={`p-1 rounded-lg ${proj.iconColor}`}>
-                      <Icon className="w-3 h-3" />
-                    </div>
-                    <span className="text-xs font-bold text-[#1b3826] truncate">{proj.name}</span>
-                  </div>
-                  <span className="text-[10px] font-extrabold text-[#456d50]">{proj.progress}%</span>
-                </div>
-
-                <div className="w-full bg-[#ebf4ec] h-1 rounded-full overflow-hidden">
-                  <div
-                    className={`bg-gradient-to-r ${proj.barColor} h-full rounded-full transition-all`}
-                    style={{ width: `${proj.progress}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[10px] text-[#558163]">
-                  <span>📋 {proj.tasks} việc</span>
-                  <span className="flex items-center gap-1 bg-[#f2f7f2] px-1.5 py-0.2 rounded-full font-bold">
-                    <Users className="w-2.5 h-2.5" /> Dự án
-                  </span>
-                </div>
+          projects.map((proj) => (
+            <div
+              key={proj.id}
+              onClick={() => onSelectProjectTag(proj.tag)}
+              className="p-2 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 transition-all cursor-pointer space-y-1.5 select-none"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 truncate">
+                  #{proj.name}
+                </span>
+                <span className="text-[11px] font-mono font-semibold text-slate-500">
+                  {proj.progress}%
+                </span>
               </div>
-            );
-          })
+
+              <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-600 h-full rounded-full transition-all"
+                  style={{ width: `${proj.progress}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <span>{proj.tasks} hoàn thành</span>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

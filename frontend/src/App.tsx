@@ -52,7 +52,7 @@ const DEFAULT_MOCK_TASKS: Task[] = [
   {
     id: -3,
     title: 'Vẽ sơ đồ hệ thống kiến thức',
-    description: 'Tổng hợp các ý chính vào bảng vẽ và xuất file PDF lưu trữ cùng Bé Rái Cá',
+    description: 'Tổng hợp các ý chính vào bảng vẽ và xuất file PDF lưu trữ',
     priority: 'p3',
     status: 'todo',
     is_completed: false,
@@ -326,7 +326,7 @@ export function App() {
   }, [tasks, currentView, selectedTag, searchQuery, selectedCalendarDate]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#f6f9f6] flex text-[#1a2e22]">
+    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex text-slate-900">
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
@@ -342,7 +342,7 @@ export function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {currentView === 'overview' ? (
-          <main className="flex-1 min-h-0 w-full h-full p-2.5 sm:p-3.5 overflow-hidden">
+          <main className="flex-1 min-h-0 w-full h-full p-3 sm:p-5 overflow-hidden">
             <OverviewView
               tasks={tasks}
               onToggle={handleToggleTask}
@@ -417,17 +417,17 @@ export function App() {
               filteredCount={filteredTasks.length}
             />
 
-            <main className="flex-1 min-h-0 w-full max-w-6xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col overflow-hidden space-y-2.5">
+            <main className="flex-1 min-h-0 w-full max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-col overflow-hidden space-y-3">
               {/* Backend Connection Warning */}
               {errorNotice && (
-                <div className="bg-amber-50 border border-amber-200/90 text-amber-900 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs shadow-2xs shrink-0 animate-in fade-in">
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-2.5 flex items-center justify-between gap-3 text-xs shadow-2xs shrink-0 animate-in fade-in">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>{errorNotice}</span>
                   </div>
                   <button
                     onClick={() => fetchTasks()}
-                    className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors shrink-0"
+                    className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-md transition-colors shrink-0"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>Thử lại</span>

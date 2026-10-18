@@ -106,13 +106,13 @@ const TIMER_PRESETS = [
 ];
 
 const OTTER_QUOTES = [
-  'Hít một hơi thật sâu nào! Bé Rái Cá đang canh chừng để bạn tập trung học nè! 🦦',
-  'Vẽ sơ đồ tư duy (mindmap) bằng bút nhiều màu sẽ giúp bạn nhớ bài nhanh gấp 3 lần đó! 🧠🎨',
-  'Bạn đang học rất chăm chỉ, hãy giữ nhịp độ và không lướt điện thoại nha! 📵✨',
-  'Nhớ chớp mắt vài giây và uống một ngụm nước ấm để trí óc luôn minh mẫn nhé! 💧🍵',
-  'Gặp bài khó à? Hãy chia nhỏ nó ra vẽ từng nhánh, Bé Rái Cá tin bạn làm được! 🌿⭐',
-  'Tuyệt vời lắm! Mỗi nét bút trên bảng là một bước tiến đến mục tiêu của bạn đó! 🏆🦦',
-  'Ghi lại công thức vào Giấy Dán Ghi Chú (Sticky Note) để ôn lại trước giờ thi nhé! 📌📝',
+  'Kỹ thuật Pomodoro (25 phút tập trung + 5 phút nghỉ) giúp tối ưu hóa khả năng ghi nhớ dài hạn.',
+  'Vẽ sơ đồ tư duy (mindmap) giúp não bộ kết nối các khái niệm logic nhanh hơn ghi chép thông thường.',
+  'Áp dụng phương pháp Feynman: Thử giải thích lại kiến thức vừa học bằng từ ngữ đơn giản nhất.',
+  'Uống một ngụm nước và thư giãn mắt sau mỗi 30 phút để duy trì mức năng lượng làm việc cao.',
+  'Chia nhỏ bài học phức tạp thành từng khối kiến thức con và xử lý tuần tự từng bước.',
+  'Thực hành Active Recall: Tự đặt câu hỏi kiểm tra lại kiến thức thay vì chỉ đọc thụ động.',
+  'Dán công thức hoặc thuật ngữ quan trọng lên Giấy Ghi Chú để ôn tập nhanh trước khi kết thúc buổi học.',
 ];
 
 interface StudySpaceProps {
@@ -2350,18 +2350,18 @@ export const StudySpace: React.FC<StudySpaceProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-amber-500" />
-                      Trợ lý Rái Cá
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      Gợi ý phương pháp
                     </span>
                     <button
                       onClick={() => setOtterQuoteIndex((prev) => (prev + 1) % OTTER_QUOTES.length)}
-                      className="text-[9px] text-emerald-700 dark:text-emerald-300 font-bold hover:underline"
+                      className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                     >
-                      Đổi câu ✨
+                      Đổi gợi ý
                     </button>
                   </div>
-                  <p className="text-xs text-emerald-950 dark:text-emerald-100 font-medium leading-relaxed mt-1 italic">
+                  <p className="text-xs text-slate-700 dark:text-slate-200 font-normal leading-relaxed mt-1">
                     "{OTTER_QUOTES[otterQuoteIndex]}"
                   </p>
                 </div>

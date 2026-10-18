@@ -48,25 +48,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     },
     p3: {
       border: 'border-l-emerald-600',
-      badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      badge: 'bg-slate-100 text-slate-700 border-slate-200',
       label: 'P3 Tiêu chuẩn',
       dot: 'bg-emerald-600',
     },
     p4: {
-      border: 'border-l-stone-400',
-      badge: 'bg-stone-100 text-stone-700 border-stone-200',
+      border: 'border-l-slate-300',
+      badge: 'bg-stone-50 text-stone-600 border-stone-200',
       label: 'P4 Việc nhẹ',
-      dot: 'bg-stone-400',
+      dot: 'bg-slate-400',
     },
   };
 
   const style = priorityStyles[task.priority] || priorityStyles.p3;
 
   const recurrenceLabels: Record<string, string> = {
-    daily: 'Mỗi ngày',
+    daily: 'Hằng ngày',
     weekdays: 'T2 - T6',
-    weekly: 'Mỗi tuần',
-    monthly: 'Mỗi tháng',
+    weekly: 'Hằng tuần',
+    monthly: 'Hằng tháng',
   };
 
   const formatDueDate = (dateStr?: string | null) => {
@@ -101,9 +101,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     e.stopPropagation();
     if (!task.is_completed) {
       confetti({
-        particleCount: 35,
-        spread: 60,
-        colors: ['#10b981', '#059669', '#f59e0b', '#34d399', '#84cc16', '#d97706'],
+        particleCount: 25,
+        spread: 50,
+        colors: ['#10b981', '#059669', '#3b82f6', '#f59e0b'],
         origin: {
           x: e.clientX / window.innerWidth,
           y: e.clientY / window.innerHeight,
@@ -123,35 +123,35 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   return (
     <div
       onClick={() => onEdit(task)}
-      className={`group relative bg-white rounded-3xl border border-emerald-100/90 border-l-[5px] ${
+      className={`group relative bg-white rounded-xl border border-slate-200/90 border-l-[3.5px] ${
         task.is_completed
-          ? 'border-l-emerald-200 opacity-60 bg-emerald-50/20'
+          ? 'border-l-slate-300 opacity-65 bg-slate-50/50'
           : style.border
-      } p-4 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-pointer select-none`}
+      } p-3.5 shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all duration-150 cursor-pointer select-none`}
     >
-      <div className="flex items-start gap-3.5">
-        {/* Checkbox */}
+      <div className="flex items-start gap-3">
+        {/* Modern Checkbox */}
         <button
           type="button"
           onClick={handleToggleClick}
-          className={`mt-0.5 w-5 h-5 rounded-xl border-2 flex items-center justify-center transition-all ${
+          className={`mt-0.5 w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
             task.is_completed
-              ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs animate-check-pop'
-              : 'border-emerald-300 hover:border-emerald-600 hover:scale-105 bg-white'
+              ? 'bg-emerald-600 border-emerald-600 text-white animate-check-pop'
+              : 'border-slate-300 hover:border-emerald-600 hover:bg-emerald-50/30 bg-white'
           }`}
-          title={task.is_completed ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu hoàn thành'}
+          title={task.is_completed ? 'Đánh dấu chưa xong' : 'Đánh dấu hoàn thành'}
         >
-          {task.is_completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+          {task.is_completed && <Check className="w-3 h-3 stroke-[3]" />}
         </button>
 
         {/* Task content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`text-sm font-bold tracking-tight transition-all leading-snug ${
+              className={`text-xs font-semibold tracking-tight transition-all leading-snug ${
                 task.is_completed
                   ? 'line-through text-slate-400'
-                  : 'text-emerald-950 group-hover:text-emerald-700'
+                  : 'text-slate-900 group-hover:text-emerald-800'
               }`}
             >
               {task.title}
@@ -159,7 +159,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* Priority Badge */}
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${style.badge}`}
+              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border ${style.badge}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
               <span>{style.label}</span>
@@ -167,7 +167,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* Recurrence Rule */}
             {task.recurrence_rule && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
                 <Repeat className="w-3 h-3 text-teal-600" />
                 <span>{recurrenceLabels[task.recurrence_rule] || task.recurrence_rule}</span>
               </span>
@@ -176,18 +176,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {/* Due Date */}
             {dueInfo && (
               <span
-                className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md font-medium border ${
                   dueInfo.isOverdue
-                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : dueInfo.isToday
                     ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {dueInfo.isOverdue ? (
                   <AlertCircle className="w-3 h-3 text-rose-600" />
                 ) : (
-                  <Calendar className="w-3 h-3 text-emerald-600/70" />
+                  <Calendar className="w-3 h-3 text-slate-500" />
                 )}
                 <span>{dueInfo.label}</span>
               </span>
@@ -195,38 +195,38 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* Estimated vs Actual Time */}
             {task.estimated_minutes && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-50/70 border border-emerald-200/60 text-emerald-800 font-semibold">
-                <Clock className="w-3 h-3 text-emerald-600" />
+              <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-600 font-medium">
+                <Clock className="w-3 h-3 text-slate-400" />
                 <span>{task.estimated_minutes}p</span>
               </span>
             )}
 
             {task.actual_minutes > 0 && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 font-bold">
-                <Timer className="w-3 h-3 text-amber-600" />
-                <span>Đã tập trung: {task.actual_minutes}p</span>
+              <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
+                <Timer className="w-3 h-3 text-emerald-600" />
+                <span>Đã làm: {task.actual_minutes}p</span>
               </span>
             )}
           </div>
 
           {/* Description */}
           {task.description && (
-            <p className="text-xs text-emerald-900/70 mt-1.5 line-clamp-2 leading-relaxed flex items-start gap-1 font-medium">
-              <AlignLeft className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed flex items-start gap-1 font-normal">
+              <AlignLeft className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
               <span>{task.description}</span>
             </p>
           )}
 
           {/* Subtasks Progress Bar & Count if any */}
           {subtasksTotal > 0 && (
-            <div className="mt-2.5 flex items-center gap-2 max-w-xs">
-              <span className="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
-                <ListTodo className="w-3 h-3 text-emerald-600" />
+            <div className="mt-2 flex items-center gap-2 max-w-xs">
+              <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                <ListTodo className="w-3 h-3 text-slate-400" />
                 <span>
                   {subtasksCompleted}/{subtasksTotal} bước ({subtasksPercent}%)
                 </span>
               </span>
-              <div className="flex-1 bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+              <div className="flex-1 bg-slate-100 h-1 rounded-full overflow-hidden">
                 <div
                   className="bg-emerald-500 h-full rounded-full transition-all"
                   style={{ width: `${subtasksPercent}%` }}
@@ -237,7 +237,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Tags */}
           {task.tags && (
-            <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
               {task.tags
                 .split(',')
                 .map((t) => t.trim())
@@ -245,7 +245,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 .map((tag, i) => (
                   <span
                     key={i}
-                    className="text-[10px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-md"
+                    className="text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md"
                   >
                     #{tag}
                   </span>
@@ -264,8 +264,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onStartPomodoro(task);
               }}
-              className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 transition-colors flex items-center gap-1 text-[10px] font-extrabold"
-              title="Bắt đầu phiên Pomodoro tập trung vào việc này"
+              className="p-1.5 rounded-md text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 transition-colors flex items-center gap-1 text-[11px] font-semibold"
+              title="Bắt đầu Pomodoro tập trung vào việc này"
             >
               <Play className="w-3 h-3 fill-emerald-600 text-emerald-600" />
               <span className="hidden sm:inline">Tập trung</span>
@@ -278,7 +278,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               e.stopPropagation();
               onEdit(task);
             }}
-            className="p-1.5 rounded-lg text-emerald-700/60 hover:text-emerald-800 hover:bg-emerald-50 transition-colors"
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             title="Chỉnh sửa chi tiết"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <button
             type="button"
             onClick={handleDeleteClick}
-            className="p-1.5 rounded-lg text-emerald-700/60 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
             title="Xóa công việc"
           >
             <Trash2 className="w-3.5 h-3.5" />

@@ -4,16 +4,16 @@ import {
   Plus,
   Flame,
   AlertTriangle,
-  Leaf,
+  CheckCircle2,
   Coffee,
   Calendar,
   Clock,
   Tag,
   AlignLeft,
+  Repeat,
 } from 'lucide-react';
 import type { Priority, TaskCreateInput, RecurrenceRule } from '../types/task';
 import { prepareTaskText } from '../utils/taskDraft';
-import { Repeat } from 'lucide-react';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -67,7 +67,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
     if (isSubmitting) return;
     const taskText = prepareTaskText(title, description);
     if (!taskText) {
-      setFormError('Vui lòng nhập tên hoặc mô tả nhiệm vụ.');
+      setFormError('Vui lòng nhập tên hoặc mô tả công việc.');
       inputRef.current?.focus();
       return;
     }
@@ -113,28 +113,28 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       value: 'p1',
       label: 'P1 Khẩn cấp',
       icon: Flame,
-      classActive: 'bg-rose-50 border-rose-300 text-rose-700 ring-2 ring-rose-200/50',
+      classActive: 'bg-rose-50 border-rose-300 text-rose-700 ring-1 ring-rose-200',
       classInactive: 'border-slate-200 text-slate-600 hover:border-slate-300',
     },
     {
       value: 'p2',
       label: 'P2 Quan trọng',
       icon: AlertTriangle,
-      classActive: 'bg-amber-50 border-amber-300 text-amber-700 ring-2 ring-amber-200/50',
+      classActive: 'bg-amber-50 border-amber-300 text-amber-700 ring-1 ring-amber-200',
       classInactive: 'border-slate-200 text-slate-600 hover:border-slate-300',
     },
     {
       value: 'p3',
       label: 'P3 Tiêu chuẩn',
-      icon: Leaf,
-      classActive: 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-2 ring-emerald-200/50',
+      icon: CheckCircle2,
+      classActive: 'bg-slate-100 border-slate-300 text-slate-800 ring-1 ring-slate-200',
       classInactive: 'border-slate-200 text-slate-600 hover:border-slate-300',
     },
     {
       value: 'p4',
       label: 'P4 Việc nhẹ',
       icon: Coffee,
-      classActive: 'bg-stone-100 border-stone-300 text-stone-700 ring-2 ring-stone-200/50',
+      classActive: 'bg-stone-50 border-stone-300 text-stone-700 ring-1 ring-stone-200',
       classInactive: 'border-slate-200 text-slate-600 hover:border-slate-300',
     },
   ];
@@ -143,12 +143,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl bg-white rounded-lg shadow-xl border border-emerald-200 overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         <form onSubmit={handleSubmit} onKeyDown={(event) => {
           if (!(event.target instanceof HTMLButtonElement) && (event.ctrlKey || event.metaKey) && event.key === 'Enter') {
             event.preventDefault();
@@ -156,30 +156,30 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           }
         }}>
           {/* Header */}
-          <div className="px-6 py-4 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/60">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-emerald-600 flex items-center justify-center text-white shadow-xs">
-                <Plus className="w-4 h-4 stroke-[3]" />
+          <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-2xs">
+                <Plus className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-emerald-950">Giao việc cho bé Rái Cá</h3>
-                <p className="text-[10px] text-emerald-800/70 font-medium">Tạo nhiệm vụ mới trong khu rừng</p>
+                <h3 className="text-xs font-bold text-slate-900">Tạo công việc mới</h3>
+                <p className="text-[11px] text-slate-500 font-normal">Thêm nhiệm vụ vào lịch trình làm việc</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-md text-emerald-700/60 hover:text-emerald-900 hover:bg-emerald-100/60 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="p-6 space-y-4">
+          <div className="p-5 space-y-3.5">
             {/* Title */}
-            <div className="space-y-1.5">
-              <label htmlFor="new-task-title" className="block text-[11px] font-bold uppercase tracking-wide text-emerald-800">
-                Tên nhiệm vụ
+            <div className="space-y-1">
+              <label htmlFor="new-task-title" className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                Tên công việc
               </label>
               <input
                 id="new-task-title"
@@ -191,19 +191,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   setTitle(e.target.value);
                   if (formError) setFormError(null);
                 }}
-                placeholder="Ví dụ: Hoàn thành báo cáo"
+                placeholder="Ví dụ: Soạn tài liệu thuyết trình quý 3"
                 aria-invalid={Boolean(formError)}
                 aria-describedby={formError ? 'new-task-error' : undefined}
-                className={`w-full px-3 py-2.5 text-sm font-semibold text-emerald-950 placeholder-emerald-800/35 bg-white border rounded-md outline-none focus:ring-2 focus:ring-emerald-100 ${formError ? 'border-rose-400 focus:border-rose-500' : 'border-emerald-200 focus:border-emerald-600'}`}
+                className={`w-full px-3 py-2 text-xs font-medium text-slate-900 placeholder-slate-400 bg-white border rounded-lg outline-none focus:ring-1 ${formError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'}`}
               />
-              {formError && <p id="new-task-error" role="alert" className="text-xs text-rose-700">{formError}</p>}
-              <p className="text-[11px] text-emerald-800/60">Nếu chỉ nhập mô tả, dòng đầu sẽ được dùng làm tên nhiệm vụ.</p>
+              {formError && <p id="new-task-error" role="alert" className="text-xs text-rose-600 mt-1">{formError}</p>}
             </div>
 
             {/* Description */}
-            <div className="space-y-1.5">
-              <label htmlFor="new-task-description" className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800">
-                <AlignLeft className="w-3.5 h-3.5" /> Mô tả <span className="font-normal normal-case text-emerald-700/70">(tùy chọn)</span>
+            <div className="space-y-1">
+              <label htmlFor="new-task-description" className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                <AlignLeft className="w-3 h-3" />
+                <span>Mô tả</span>
+                <span className="font-normal normal-case text-slate-400">(tùy chọn)</span>
               </label>
               <textarea
                 id="new-task-description"
@@ -212,15 +213,15 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   setDescription(e.target.value);
                   if (formError) setFormError(null);
                 }}
-                placeholder="Thêm chi tiết nếu cần..."
+                placeholder="Ghi chú thêm chi tiết công việc..."
                 rows={2}
-                className="w-full px-3 py-2.5 text-sm text-emerald-950 placeholder-emerald-800/40 bg-white border border-emerald-200 rounded-md outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 resize-y leading-relaxed"
+                className="w-full px-3 py-2 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 resize-y leading-relaxed"
               />
             </div>
 
             {/* Priority */}
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-emerald-800/60 mb-2">
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                 Độ ưu tiên
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -232,7 +233,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                       key={item.value}
                       type="button"
                       onClick={() => setPriority(item.value)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold border transition-all ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                         isSelected ? item.classActive : item.classInactive
                       }`}
                     >
@@ -245,38 +246,38 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             </div>
 
             {/* Timing & Tags */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
               {/* Due Date */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase tracking-wider text-emerald-800/60 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-slate-400" />
                   <span>Hạn chót</span>
                 </label>
                 <input
                   type="datetime-local"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
+                  className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
                 />
-                <div className="flex items-center gap-1.5 pt-1">
+                <div className="flex items-center gap-1 pt-0.5">
                   <button
                     type="button"
                     onClick={() => setQuickDate(0)}
-                    className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                    className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors"
                   >
                     Hôm nay
                   </button>
                   <button
                     type="button"
                     onClick={() => setQuickDate(1)}
-                    className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                    className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors"
                   >
                     Ngày mai
                   </button>
                   <button
                     type="button"
                     onClick={() => setQuickDate(3)}
-                    className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                    className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors"
                   >
                     +3 ngày
                   </button>
@@ -284,13 +285,13 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               {/* Estimated & Tags */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-800/60 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Thời gian ước tính (phút)</span>
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <span>Dự kiến (phút)</span>
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <input
                       type="number"
                       min="1"
@@ -300,7 +301,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                         setEstimatedMinutes(e.target.value ? Number(e.target.value) : '')
                       }
                       placeholder="vd: 25"
-                      className="w-24 text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
+                      className="w-20 text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-emerald-500"
                     />
                     <div className="flex items-center gap-1">
                       {[15, 25, 45].map((m) => (
@@ -308,7 +309,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                           key={m}
                           type="button"
                           onClick={() => setEstimatedMinutes(m)}
-                          className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded-md transition-colors"
+                          className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-1.5 py-1 rounded transition-colors"
                         >
                           {m}p
                         </button>
@@ -317,61 +318,62 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-800/60 flex items-center gap-1">
-                    <Repeat className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                    <Repeat className="w-3 h-3 text-slate-400" />
                     <span>Lặp lại</span>
                   </label>
                   <select
                     value={recurrenceRule}
                     onChange={(e) => setRecurrenceRule(e.target.value as RecurrenceRule | '')}
-                    className="w-full text-xs font-semibold text-emerald-950 bg-white border border-emerald-200 rounded-md px-2.5 py-2 outline-none focus:border-emerald-600"
+                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-emerald-500"
                   >
-                    <option value="">Không lặp lại</option>
-                    <option value="daily">Mỗi ngày</option>
+                    <option value="">Không lặp</option>
+                    <option value="daily">Hằng ngày</option>
                     <option value="weekdays">Thứ 2 - Thứ 6</option>
-                    <option value="weekly">Mỗi tuần</option>
-                    <option value="monthly">Mỗi tháng</option>
+                    <option value="weekly">Hằng tuần</option>
+                    <option value="monthly">Hằng tháng</option>
                   </select>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-800/60 flex items-center gap-1">
-                    <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Thẻ rừng xanh (tags)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    placeholder="rungxanh, duan, hoctap..."
-                    className="w-full text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
-                  />
-                </div>
               </div>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-1 pt-1">
+              <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                <Tag className="w-3 h-3 text-slate-400" />
+                <span>Thẻ nhãn (tags)</span>
+              </label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="toan, tienganh, mindmap (ngăn cách bởi dấu phẩy)..."
+                className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
+              />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-emerald-50/50 border-t border-emerald-100 flex items-center justify-between">
-            <span className="text-[11px] text-emerald-800/60 font-medium hidden sm:inline">
-              Mẹo: Nhấn <kbd className="px-1.5 py-0.5 bg-emerald-100 rounded text-emerald-900 font-mono text-[10px]">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 bg-emerald-100 rounded text-emerald-900 font-mono text-[10px]">Enter</kbd> để tạo nhanh
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+              Nhấn <kbd className="px-1 py-0.5 bg-slate-200/80 rounded text-slate-700 font-mono text-[10px]">Ctrl</kbd> + <kbd className="px-1 py-0.5 bg-slate-200/80 rounded text-slate-700 font-mono text-[10px]">Enter</kbd> để tạo nhanh
             </span>
             <div className="flex items-center gap-2 ml-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 rounded-md hover:bg-emerald-100/60 transition-colors"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-200/60 transition-colors"
               >
-                Hủy bỏ
+                Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none shadow-2xs"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Thêm nhiệm vụ</span>
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Tạo công việc</span>
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Timer,
+  Clock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Task } from '../types/task';
@@ -39,7 +40,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const timerRef = useRef<number | null>(null);
   const completionHandledRef = useRef(false);
 
-  // Play pleasant nature chime using Web Audio API
+  // Play pleasant chime using Web Audio API
   const playChimeSound = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -48,11 +49,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      // Harmonic pleasant chord (chime)
       osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
       osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
 
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
 
       osc.connect(gain);
@@ -85,16 +85,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
     if (mode === 'pomodoro') {
       confetti({
-        particleCount: 50,
-        spread: 70,
-        colors: ['#10b981', '#059669', '#f59e0b', '#34d399', '#84cc16'],
+        particleCount: 40,
+        spread: 60,
+        colors: ['#10b981', '#059669', '#3b82f6', '#f59e0b'],
       });
 
       triggerNotification(
-        '🎉 Hoàn thành phiên Pomodoro!',
+        'Hoàn thành phiên tập trung!',
         activeTask
-          ? `Bé Rái Cá chúc mừng bạn hoàn thành 25 phút tập trung vào: ${activeTask.title}`
-          : 'Bé Rái Cá chúc mừng bạn hoàn thành 25 phút tập trung!'
+          ? `Bạn đã hoàn thành 25 phút tập trung vào: ${activeTask.title}`
+          : 'Bạn đã hoàn thành 25 phút tập trung hiệu quả!'
       );
 
       // Log 25 minutes to active task
@@ -106,13 +106,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       setMode('shortBreak');
       setTimeLeft(MODE_TIMES.shortBreak);
     } else {
-      triggerNotification('☕ Hết giờ giải lao!', 'Hãy quay lại phiên tập trung tiếp theo cùng bé Rái Cá nhé.');
+      triggerNotification('Hết giờ giải lao!', 'Hãy quay lại phiên tập trung tiếp theo.');
       setMode('pomodoro');
       setTimeLeft(MODE_TIMES.pomodoro);
     }
   }, [mode, activeTask, onLogPomodoro, playChimeSound, triggerNotification]);
 
-  // Keep state updaters pure so React cannot log a completed session twice.
   useEffect(() => {
     if (!isRunning) return;
     timerRef.current = window.setInterval(() => {
@@ -143,14 +142,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     setTimeLeft(MODE_TIMES[mode]);
   };
 
-  // Format MM:SS
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   const progressPercent = Math.round(((MODE_TIMES[mode] - timeLeft) / MODE_TIMES[mode]) * 100);
 
-  // Active incomplete tasks for selector
   const availableTasks = tasks.filter((t) => !t.is_completed);
 
   return (
@@ -159,86 +156,78 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       {!isExpanded ? (
         <button
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-3 bg-white/95 backdrop-blur-md border border-emerald-200/90 rounded-full px-4 py-2.5 shadow-xl hover:shadow-2xl hover:border-emerald-400 transition-all group"
+          className="flex items-center gap-2.5 bg-white border border-slate-200/90 rounded-full px-3.5 py-2 shadow-lg hover:shadow-xl hover:border-slate-300 transition-all group"
         >
-          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-emerald-100 ring-2 ring-emerald-300">
-            <img
-              src="/otter-mascot.png"
-              alt="Otter Pomodoro"
-              className="w-full h-full object-cover object-top"
-            />
+          <div className="w-6 h-6 rounded-full overflow-hidden bg-emerald-950 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <Clock className="w-3.5 h-3.5 text-emerald-400" />
           </div>
 
           <div className="text-left">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">
-                {mode === 'pomodoro' ? '🍅 Tập trung' : '☕ Giải lao'}
+              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                {mode === 'pomodoro' ? 'Tập trung' : 'Giải lao'}
               </span>
               {isRunning && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               )}
             </div>
-            <div className="text-sm font-black text-emerald-950 font-mono leading-none mt-0.5">
+            <div className="text-xs font-bold text-slate-900 font-mono leading-none mt-0.5">
               {timeFormatted}
             </div>
           </div>
 
-          <div className="p-1 rounded-full text-emerald-700/60 group-hover:text-emerald-900 group-hover:bg-emerald-50 transition-colors">
-            <ChevronUp className="w-4 h-4" />
+          <div className="p-0.5 rounded-full text-slate-400 group-hover:text-slate-700 transition-colors">
+            <ChevronUp className="w-3.5 h-3.5" />
           </div>
         </button>
       ) : (
         /* Expanded Floating Widget */
-        <div className="w-80 bg-white/95 backdrop-blur-md border border-emerald-200 rounded-3xl p-4 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-200">
+        <div className="w-80 bg-white border border-slate-200 rounded-xl p-4 shadow-xl space-y-3.5 animate-in slide-in-from-bottom-3 duration-150">
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-emerald-100">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl overflow-hidden bg-emerald-100 ring-1 ring-emerald-300">
-                <img
-                  src="/otter-mascot.png"
-                  alt="Otter"
-                  className="w-full h-full object-cover object-top"
-                />
+              <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center text-white">
+                <Clock className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-black text-emerald-950">Rái Cá Pomodoro</span>
+              <span className="text-xs font-bold text-slate-900">Đồng hồ Pomodoro</span>
             </div>
 
             <button
               onClick={() => setIsExpanded(false)}
-              className="p-1 text-emerald-700/60 hover:text-emerald-950 hover:bg-emerald-50 rounded-lg transition-colors"
+              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
             >
               <ChevronDown className="w-4 h-4" />
             </button>
           </div>
 
           {/* Mode Tabs */}
-          <div className="grid grid-cols-3 gap-1 bg-emerald-50/70 p-1 rounded-2xl">
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
             <button
               onClick={() => changeMode('pomodoro')}
-              className={`py-1.5 text-[11px] font-bold rounded-xl transition-all ${
+              className={`py-1.5 rounded-md transition-all ${
                 mode === 'pomodoro'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-emerald-800/70 hover:text-emerald-950'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              25p Tập trung
+              25p Làm việc
             </button>
             <button
               onClick={() => changeMode('shortBreak')}
-              className={`py-1.5 text-[11px] font-bold rounded-xl transition-all ${
+              className={`py-1.5 rounded-md transition-all ${
                 mode === 'shortBreak'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-emerald-800/70 hover:text-emerald-950'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               5p Nghỉ ngắn
             </button>
             <button
               onClick={() => changeMode('longBreak')}
-              className={`py-1.5 text-[11px] font-bold rounded-xl transition-all ${
+              className={`py-1.5 rounded-md transition-all ${
                 mode === 'longBreak'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-emerald-800/70 hover:text-emerald-950'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               15p Nghỉ dài
@@ -246,13 +235,13 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           </div>
 
           {/* Big Time Display */}
-          <div className="text-center py-2">
-            <div className="text-4xl font-black text-emerald-950 tracking-tight font-mono">
+          <div className="text-center py-1">
+            <div className="text-3xl font-bold text-slate-900 tracking-tight font-mono">
               {timeFormatted}
             </div>
-            <div className="w-full bg-emerald-100/60 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="w-full bg-slate-100 h-1 rounded-full mt-2.5 overflow-hidden">
               <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -260,9 +249,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
           {/* Task Link Selector */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-emerald-800/60 uppercase flex items-center gap-1">
-              <Timer className="w-3 h-3 text-emerald-600" />
-              <span>Đang tập trung cho nhiệm vụ:</span>
+            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <Timer className="w-3 h-3 text-slate-400" />
+              <span>Gắn với công việc:</span>
             </label>
             <select
               value={activeTask?.id || ''}
@@ -271,7 +260,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 const found = tasks.find((t) => t.id === id) || null;
                 onSelectTask(found);
               }}
-              className="w-full text-xs font-semibold text-emerald-950 bg-emerald-50/60 border border-emerald-200 rounded-xl px-2.5 py-1.5 outline-none focus:bg-white focus:border-emerald-500"
+              className="w-full text-xs font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
             >
               <option value="">-- Tập trung tự do (Không gắn task) --</option>
               {availableTasks.map((t) => (
@@ -283,10 +272,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           </div>
 
           {/* Action Controls */}
-          <div className="flex items-center justify-center gap-3 pt-1">
+          <div className="flex items-center justify-center gap-2 pt-1">
             <button
               onClick={resetTimer}
-              className="p-2 text-emerald-700/60 hover:text-emerald-950 hover:bg-emerald-50 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               title="Đặt lại"
             >
               <RotateCcw className="w-4 h-4" />
@@ -300,7 +289,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 }
                 setIsRunning(!isRunning);
               }}
-              className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex items-center gap-2 shadow-md shadow-emerald-700/20 transition-all"
+              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
             >
               {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
               <span>{isRunning ? 'Tạm dừng' : 'Bắt đầu'}</span>
