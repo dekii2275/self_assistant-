@@ -42,15 +42,15 @@ export interface TaskCreateInput {
 
 export interface TaskUpdateInput {
   title?: string;
-  description?: string;
+  description?: string | null;
   priority?: Priority;
   status?: TaskStatus;
   is_completed?: boolean;
-  due_date?: string;
-  estimated_minutes?: number;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
   actual_minutes?: number;
   recurrence_rule?: RecurrenceRule | null;
-  tags?: string;
+  tags?: string | null;
 }
 
 export interface Goal {

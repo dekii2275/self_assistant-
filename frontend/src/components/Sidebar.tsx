@@ -10,13 +10,16 @@ import {
   X,
   Server,
   BookOpen,
+  PenTool,
 } from 'lucide-react';
 import type { Task } from '../types/task';
+import { localDateKey, dueDateKey } from '../utils/date';
 
 export type MainNavView =
   | 'overview'
   | 'today'
   | 'timetable'
+  | 'study-space'
   | 'tasks'
   | 'projects'
   | 'stats'
@@ -45,11 +48,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedTag,
   onSelectTag,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateKey(new Date());
 
   const counts = {
     today: tasks.filter(
-      (t) => !t.is_completed && (!t.due_date || t.due_date.startsWith(todayStr))
+      (t) => !t.is_completed && (!t.due_date || dueDateKey(t.due_date) === todayStr)
     ).length,
     all: tasks.filter((t) => !t.is_completed).length,
   };
@@ -72,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'overview', label: 'Tổng quan', icon: Home },
     { id: 'today', label: 'Hôm nay', icon: Sun, count: counts.today },
     { id: 'timetable', label: 'Thời gian biểu tuần', icon: CalendarDays },
+    { id: 'study-space', label: 'Không gian học', icon: PenTool },
     { id: 'tasks', label: 'Công việc', icon: CheckSquare, count: counts.all },
     { id: 'projects', label: 'Dự án', icon: FolderKanban },
     { id: 'stats', label: 'Thống kê', icon: BarChart3 },

@@ -23,6 +23,7 @@ import {
   ActiveProjectsWidget,
 } from './DashboardWidgets';
 import type { Task, Priority } from '../types/task';
+import { localDateKey, dueDateKey } from '../utils/date';
 
 interface OverviewViewProps {
   tasks: Task[];
@@ -30,6 +31,7 @@ interface OverviewViewProps {
   onEdit: (task: Task) => void;
   onOpenNewTaskModal: () => void;
   onViewAllTasks: () => void;
+  onOpenStudySpace?: () => void;
   selectedCalendarDate: string | null;
   onSelectCalendarDate: (dateStr: string | null) => void;
   searchQuery: string;
@@ -43,6 +45,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onEdit,
   onOpenNewTaskModal,
   onViewAllTasks,
+  onOpenStudySpace,
   selectedCalendarDate,
   onSelectCalendarDate,
   searchQuery,
@@ -54,13 +57,13 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userName);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateKey(new Date());
 
   // Today's tasks (or filtered by selected calendar date if clicked)
   const targetDateKey = selectedCalendarDate || todayStr;
   const targetTasks = tasks.filter((t) => {
     if (!t.due_date) return !selectedCalendarDate;
-    return t.due_date.startsWith(targetDateKey);
+    return dueDateKey(t.due_date) === targetDateKey;
   });
 
   const completedToday = targetTasks.filter((t) => t.is_completed).length;
@@ -83,21 +86,21 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     const completedDates = new Set(
       tasks
         .filter((t) => t.is_completed)
-        .map((t) => (t.updated_at || t.created_at || '').split('T')[0])
+        .map((t) => dueDateKey(t.updated_at || t.created_at || ''))
         .filter(Boolean)
     );
 
     let count = 0;
     const checkDate = new Date();
     while (true) {
-      const dateKey = checkDate.toISOString().split('T')[0];
+      const dateKey = localDateKey(checkDate);
       if (completedDates.has(dateKey)) {
         count++;
         checkDate.setDate(checkDate.getDate() - 1);
       } else {
         if (count === 0) {
           checkDate.setDate(checkDate.getDate() - 1);
-          const yesterdayKey = checkDate.toISOString().split('T')[0];
+          const yesterdayKey = localDateKey(checkDate);
           if (completedDates.has(yesterdayKey)) {
             count++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -465,7 +468,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
           {/* Bottom: Otter Assistant Card */}
           <div className="flex-1 min-h-0 flex flex-col">
-            <OtterAssistantCard urgentCount={urgentCount} onViewList={onViewAllTasks} />
+            <OtterAssistantCard
+              urgentCount={urgentCount}
+              onViewList={onViewAllTasks}
+              onOpenStudySpace={onOpenStudySpace}
+            />
           </div>
         </div>
 

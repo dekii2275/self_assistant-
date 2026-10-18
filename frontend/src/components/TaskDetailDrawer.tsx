@@ -82,15 +82,17 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       setIsSaving(true);
       await onUpdate(task.id, {
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null,
         priority,
         status,
-        due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
-        estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : undefined,
+        due_date: dueDate ? new Date(dueDate).toISOString() : null,
+        estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : null,
         recurrence_rule: (recurrenceRule as RecurrenceRule) || null,
-        tags: tags.trim() || undefined,
+        tags: tags.trim() || null,
       });
       onClose();
+    } catch {
+      alert('Không thể lưu công việc. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
     }
@@ -99,8 +101,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const handleCreateSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubtaskTitle.trim()) return;
-    await onAddSubtask(task.id, newSubtaskTitle.trim());
-    setNewSubtaskTitle('');
+    const created = await onAddSubtask(task.id, newSubtaskTitle.trim());
+    if (created) setNewSubtaskTitle('');
   };
 
   const priorityItems: {
@@ -154,7 +156,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 onClick={() => {
                   if (confirm('Bạn chắc chắn muốn xóa nhiệm vụ này?')) {
                     onDelete(task.id);
-                    onClose();
                   }
                 }}
                 className="p-1.5 rounded-lg text-emerald-700/60 hover:text-rose-600 hover:bg-rose-50 transition-colors"

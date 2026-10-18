@@ -9,12 +9,84 @@ import { TaskDetailDrawer } from './components/TaskDetailDrawer';
 import { PomodoroTimer } from './components/PomodoroTimer';
 import { OverviewView } from './components/OverviewView';
 import { WeeklyTimetable } from './components/WeeklyTimetable';
+import { StudySpace } from './components/StudySpace';
 import { taskApi } from './services/api';
+import { localDateKey, dueDateKey } from './utils/date';
 import type { Task, TaskCreateInput, TaskUpdateInput, Priority, Subtask } from './types/task';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+const DEFAULT_MOCK_TASKS: Task[] = [
+  {
+    id: -1,
+    title: 'Ôn tập công thức Toán & Giải tích',
+    description: 'Vẽ sơ đồ tư duy các dạng tích phân và đạo hàm trên bảng Không gian học',
+    priority: 'p1',
+    status: 'in_progress',
+    is_completed: false,
+    due_date: localDateKey(new Date()),
+    estimated_minutes: 45,
+    actual_minutes: 25,
+    tags: 'Toán,Học tập',
+    subtasks: [
+      { id: 101, task_id: 1, title: 'Công thức đạo hàm lượng giác', is_completed: true, created_at: '' },
+      { id: 102, task_id: 1, title: 'Bài tập tích phân từng phần', is_completed: false, created_at: '' },
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: -2,
+    title: 'Ghi chép từ vựng Tiếng Anh chuyên ngành',
+    description: 'Sử dụng Không gian học để vẽ mindmap từ vựng và lưu PDF',
+    priority: 'p2',
+    status: 'todo',
+    is_completed: false,
+    due_date: localDateKey(new Date()),
+    estimated_minutes: 30,
+    actual_minutes: 0,
+    tags: 'Tiếng Anh,Mindmap',
+    subtasks: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: -3,
+    title: 'Vẽ sơ đồ hệ thống kiến thức',
+    description: 'Tổng hợp các ý chính vào bảng vẽ và xuất file PDF lưu trữ cùng Bé Rái Cá',
+    priority: 'p3',
+    status: 'todo',
+    is_completed: false,
+    due_date: localDateKey(new Date()),
+    estimated_minutes: 25,
+    actual_minutes: 0,
+    tags: 'Sơ đồ,Không gian học',
+    subtasks: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 export function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    try {
+      const saved = localStorage.getItem('otter_cached_tasks');
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((task): task is Task =>
+            task !== null &&
+            typeof task === 'object' &&
+            typeof task.id === 'number' &&
+            typeof task.title === 'string' &&
+            Array.isArray(task.subtasks)
+          );
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_MOCK_TASKS;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
@@ -36,39 +108,30 @@ export function App() {
   // Pomodoro Focus Timer State
   const [pomodoroActiveTask, setPomodoroActiveTask] = useState<Task | null>(null);
 
-  // Connection check
-  const checkConnection = useCallback(async () => {
+  const fetchTasks = useCallback(async (showLoading = true) => {
     try {
-      await taskApi.checkHealth();
-      setIsBackendOnline(true);
-      setErrorNotice(null);
-    } catch {
-      setIsBackendOnline(false);
-      setErrorNotice(
-        'Không thể kết nối đến Backend (Port 8974). Vui lòng đảm bảo Docker Compose đang chạy.'
-      );
-    }
-  }, []);
-
-  const fetchTasks = useCallback(async () => {
-    try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       const data = await taskApi.getTasks();
       setTasks(data);
       setIsBackendOnline(true);
       setErrorNotice(null);
     } catch {
-      await checkConnection();
+      setIsBackendOnline(false);
+      setErrorNotice('Không thể tải danh sách công việc. Vui lòng kiểm tra kết nối Backend.');
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
-  }, [checkConnection]);
+  }, []);
 
   useEffect(() => {
-    fetchTasks();
-    const interval = setInterval(checkConnection, 15000);
+    void fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    if (isBackendOnline) return;
+    const interval = setInterval(() => { void fetchTasks(false); }, 30000);
     return () => clearInterval(interval);
-  }, [fetchTasks, checkConnection]);
+  }, [fetchTasks, isBackendOnline]);
 
   // Global Keyboard shortcuts
   useEffect(() => {
@@ -83,15 +146,20 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Save tasks to cache
+  useEffect(() => {
+    if (tasks === DEFAULT_MOCK_TASKS) return;
+    try {
+      localStorage.setItem('otter_cached_tasks', JSON.stringify(tasks));
+    } catch {
+      // ignore
+    }
+  }, [tasks]);
+
   // CRUD Handlers
   const handleAddTask = async (newTaskData: TaskCreateInput) => {
-    try {
-      const created = await taskApi.createTask(newTaskData);
-      setTasks((prev) => [created, ...prev]);
-    } catch (err) {
-      console.error('Error adding task:', err);
-      alert('Lỗi khi tạo công việc. Vui lòng kiểm tra kết nối API!');
-    }
+    const created = await taskApi.createTask(newTaskData);
+    setTasks((prev) => [created, ...prev.filter((task) => task.id > 0)]);
   };
 
   const handleUpdateTask = async (id: number, updateData: TaskUpdateInput) => {
@@ -106,23 +174,11 @@ export function App() {
       }
     } catch (err) {
       console.error('Error updating task:', err);
-      alert('Lỗi khi cập nhật công việc!');
+      throw err;
     }
   };
 
   const handleToggleTask = async (id: number) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              is_completed: !t.is_completed,
-              status: !t.is_completed ? 'done' : 'todo',
-            }
-          : t
-      )
-    );
-
     try {
       const updated = await taskApi.toggleTask(id);
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
@@ -131,24 +187,19 @@ export function App() {
       }
     } catch (err) {
       console.error('Error toggling task:', err);
-      await fetchTasks();
+      alert('Không thể cập nhật công việc. Vui lòng kiểm tra kết nối Backend.');
     }
   };
 
   const handleDeleteTask = async (id: number) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    if (editingTask?.id === id) {
-      setEditingTask(null);
-    }
-    if (pomodoroActiveTask?.id === id) {
-      setPomodoroActiveTask(null);
-    }
-
     try {
       await taskApi.deleteTask(id);
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      if (editingTask?.id === id) setEditingTask(null);
+      if (pomodoroActiveTask?.id === id) setPomodoroActiveTask(null);
     } catch (err) {
       console.error('Error deleting task:', err);
-      await fetchTasks();
+      alert('Không thể xóa công việc. Vui lòng kiểm tra kết nối Backend.');
     }
   };
 
@@ -242,12 +293,12 @@ export function App() {
 
   // Filter Tasks by View, Tag, Search, and Calendar Date
   const filteredTasks = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = localDateKey(new Date());
 
     return tasks.filter((t) => {
       // Calendar date filter (if selected from calendar)
       if (selectedCalendarDate) {
-        if (!t.due_date || !t.due_date.startsWith(selectedCalendarDate)) return false;
+        if (!t.due_date || dueDateKey(t.due_date) !== selectedCalendarDate) return false;
       }
 
       // Tag filter override
@@ -257,7 +308,7 @@ export function App() {
         // Navigation View filter
         if (currentView === 'today') {
           if (t.is_completed) return false;
-          if (t.due_date && !t.due_date.startsWith(todayStr)) return false;
+          if (t.due_date && dueDateKey(t.due_date) !== todayStr) return false;
         }
       }
 
@@ -302,6 +353,7 @@ export function App() {
                 setIsQuickAddOpen(true);
               }}
               onViewAllTasks={() => setCurrentView('tasks')}
+              onOpenStudySpace={() => setCurrentView('study-space')}
               selectedCalendarDate={selectedCalendarDate}
               onSelectCalendarDate={setSelectedCalendarDate}
               searchQuery={searchQuery}
@@ -338,6 +390,14 @@ export function App() {
                 }}
               />
             </main>
+          </div>
+        ) : currentView === 'study-space' ? (
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+            <StudySpace
+              tasks={tasks.filter((task) => task.id > 0)}
+              onLogStudyMinutes={handleLogPomodoro}
+              onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+            />
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
@@ -449,8 +509,8 @@ export function App() {
 
       {/* Otter Pomodoro Focus Widget */}
       <PomodoroTimer
-        tasks={tasks}
-        activeTask={pomodoroActiveTask}
+        tasks={tasks.filter((task) => task.id > 0)}
+        activeTask={pomodoroActiveTask?.id && pomodoroActiveTask.id > 0 ? pomodoroActiveTask : null}
         onSelectTask={(task) => setPomodoroActiveTask(task)}
         onLogPomodoro={handleLogPomodoro}
       />

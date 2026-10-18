@@ -10,6 +10,7 @@ import {
   Users,
   Plus,
   Trash2,
+  PenTool,
 } from 'lucide-react';
 import type { Task, Goal } from '../types/task';
 import { goalApi } from '../services/api';
@@ -146,14 +147,11 @@ export const DailyGoalsWidget: React.FC = () => {
   }, []);
 
   const handleToggle = async (id: number) => {
-    setGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, is_completed: !g.is_completed } : g))
-    );
     try {
       const updated = await goalApi.toggleGoal(id);
       setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)));
     } catch {
-      await fetchGoals();
+      alert('Không thể cập nhật mục tiêu. Vui lòng thử lại.');
     }
   };
 
@@ -167,15 +165,16 @@ export const DailyGoalsWidget: React.FC = () => {
       setIsAdding(false);
     } catch (err) {
       console.error('Error creating goal:', err);
+      alert('Không thể thêm mục tiêu. Vui lòng thử lại.');
     }
   };
 
   const handleDelete = async (id: number) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
     try {
       await goalApi.deleteGoal(id);
+      setGoals((prev) => prev.filter((g) => g.id !== id));
     } catch {
-      await fetchGoals();
+      alert('Không thể xóa mục tiêu. Vui lòng thử lại.');
     }
   };
 
@@ -297,11 +296,13 @@ export const DailyGoalsWidget: React.FC = () => {
 interface OtterAssistantCardProps {
   urgentCount: number;
   onViewList: () => void;
+  onOpenStudySpace?: () => void;
 }
 
 export const OtterAssistantCard: React.FC<OtterAssistantCardProps> = ({
   urgentCount,
   onViewList,
+  onOpenStudySpace,
 }) => {
   return (
     <div className="bg-gradient-to-br from-[#f8faf7] via-[#eff7f1] to-[#e4f3e7] rounded-2xl p-3 border border-[#d3e6d6] shadow-2xs relative overflow-hidden flex items-center justify-between gap-2.5">
@@ -318,13 +319,24 @@ export const OtterAssistantCard: React.FC<OtterAssistantCardProps> = ({
             <>Hôm nay bạn đang tiến bộ rất tốt! 🌿 Hãy duy trì nhịp độ này nhé!</>
           )}
         </p>
-        <button
-          onClick={onViewList}
-          className="inline-flex items-center gap-1 text-[10px] font-black text-white bg-[#224830] hover:bg-[#1a3825] px-2.5 py-1 rounded-lg shadow-2xs transition-colors"
-        >
-          <span>Xem danh sách</span>
-          <ArrowRight className="w-2.5 h-2.5" />
-        </button>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={onViewList}
+            className="inline-flex items-center gap-1 text-[10px] font-black text-white bg-[#224830] hover:bg-[#1a3825] px-2 py-1 rounded-lg shadow-2xs transition-colors"
+          >
+            <span>Xem việc</span>
+            <ArrowRight className="w-2.5 h-2.5" />
+          </button>
+          {onOpenStudySpace && (
+            <button
+              onClick={onOpenStudySpace}
+              className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-2 py-1 rounded-lg shadow-2xs transition-colors"
+            >
+              <PenTool className="w-2.5 h-2.5 text-emerald-700" />
+              <span>Không gian học</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mascot Image */}

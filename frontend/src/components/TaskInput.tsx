@@ -25,6 +25,8 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
       });
       setTitle('');
       setPriority('p3');
+    } catch {
+      alert('Không thể thêm công việc. Vui lòng kiểm tra kết nối Backend.');
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +51,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
   const CurrentPriorityIcon = priorityBadges[priority].icon;
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-emerald-200/90 p-2.5 transition-all focus-within:border-emerald-500 focus-within:shadow-md focus-within:ring-3 focus-within:ring-emerald-200/50">
+    <div className="bg-white rounded-lg shadow-sm border border-emerald-200/90 p-2.5 transition-all focus-within:border-emerald-500 focus-within:shadow-md focus-within:ring-2 focus-within:ring-emerald-200/50">
       <form onSubmit={handleSubmit} className="flex items-center gap-2.5">
         <div className="pl-2.5 text-emerald-600">
           <Plus className="w-5 h-5 stroke-[3]" />
@@ -67,7 +69,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
         <button
           type="button"
           onClick={cyclePriority}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${priorityBadges[priority].color}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-extrabold border transition-all ${priorityBadges[priority].color}`}
           title="Bấm để đổi độ ưu tiên"
         >
           <CurrentPriorityIcon className="w-3.5 h-3.5" />
@@ -78,7 +80,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
         <button
           type="button"
           onClick={onOpenDetailedModal}
-          className="p-2 text-emerald-700/60 hover:text-emerald-800 rounded-xl hover:bg-emerald-50 transition-colors"
+          className="p-2 text-emerald-700/60 hover:text-emerald-800 rounded-md hover:bg-emerald-50 transition-colors"
           title="Thêm chi tiết (hạn chót, thời gian, tags...)"
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -88,7 +90,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, onOpenDetailedM
         <button
           type="submit"
           disabled={!title.trim() || isSubmitting}
-          className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xs shadow-emerald-700/20"
+          className="px-4 py-2 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none"
         >
           Thêm
         </button>

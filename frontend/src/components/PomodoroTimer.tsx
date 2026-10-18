@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play,
   Pause,
@@ -37,9 +37,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const timerRef = useRef<number | null>(null);
+  const completionHandledRef = useRef(false);
 
   // Play pleasant nature chime using Web Audio API
-  const playChimeSound = () => {
+  const playChimeSound = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AudioCtx();
@@ -62,10 +63,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     } catch {
       // Audio fallback
     }
-  };
+  }, []);
 
   // Browser Notification
-  const triggerNotification = (title: string, body: string) => {
+  const triggerNotification = useCallback((title: string, body: string) => {
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
         new Notification(title, {
@@ -76,30 +77,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         Notification.requestPermission();
       }
     }
-  };
+  }, []);
 
-  // Timer Tick
-  useEffect(() => {
-    if (isRunning) {
-      timerRef.current = window.setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleCompleteSession();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning, mode, activeTask]);
-
-  const handleCompleteSession = async () => {
+  const handleCompleteSession = useCallback(async () => {
     setIsRunning(false);
     playChimeSound();
 
@@ -130,15 +110,35 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       setMode('pomodoro');
       setTimeLeft(MODE_TIMES.pomodoro);
     }
-  };
+  }, [mode, activeTask, onLogPomodoro, playChimeSound, triggerNotification]);
+
+  // Keep state updaters pure so React cannot log a completed session twice.
+  useEffect(() => {
+    if (!isRunning) return;
+    timerRef.current = window.setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => {
+      if (timerRef.current !== null) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [isRunning]);
+
+  useEffect(() => {
+    if (!isRunning || timeLeft !== 0 || completionHandledRef.current) return;
+    completionHandledRef.current = true;
+    void handleCompleteSession();
+  }, [isRunning, timeLeft, handleCompleteSession]);
 
   const changeMode = (newMode: Mode) => {
+    completionHandledRef.current = false;
     setIsRunning(false);
     setMode(newMode);
     setTimeLeft(MODE_TIMES[newMode]);
   };
 
   const resetTimer = () => {
+    completionHandledRef.current = false;
     setIsRunning(false);
     setTimeLeft(MODE_TIMES[mode]);
   };
@@ -294,6 +294,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
             <button
               onClick={() => {
+                if (!isRunning) completionHandledRef.current = false;
                 if ('Notification' in window && Notification.permission === 'default') {
                   Notification.requestPermission();
                 }

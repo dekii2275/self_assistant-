@@ -18,8 +18,17 @@ export const taskApi = {
     is_completed?: boolean;
     search?: string;
   }): Promise<Task[]> {
-    const res = await apiClient.get<Task[]>('/tasks', { params });
-    return res.data;
+    const tasks: Task[] = [];
+    const limit = 200;
+    let page: Task[];
+    do {
+      const res = await apiClient.get<Task[]>('/tasks', {
+        params: { ...params, skip: tasks.length, limit },
+      });
+      page = res.data;
+      tasks.push(...page);
+    } while (page.length === limit);
+    return tasks;
   },
 
   async getTask(id: number): Promise<Task> {

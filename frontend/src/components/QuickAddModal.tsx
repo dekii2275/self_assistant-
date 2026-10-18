@@ -12,6 +12,7 @@ import {
   AlignLeft,
 } from 'lucide-react';
 import type { Priority, TaskCreateInput, RecurrenceRule } from '../types/task';
+import { prepareTaskText } from '../utils/taskDraft';
 import { Repeat } from 'lucide-react';
 
 interface QuickAddModalProps {
@@ -37,12 +38,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | ''>('');
   const [tags, setTags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
+      setFormError(null);
       setPriority(defaultPriority);
       if (defaultDueDate) {
         setDueDate(defaultDueDate.slice(0, 16));
@@ -52,6 +55,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       setDescription('');
       setDueDate('');
       setEstimatedMinutes('');
+      setRecurrenceRule('');
       setTags('');
     }
   }, [isOpen, defaultPriority, defaultDueDate]);
@@ -60,13 +64,19 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!title.trim() || isSubmitting) return;
+    if (isSubmitting) return;
+    const taskText = prepareTaskText(title, description);
+    if (!taskText) {
+      setFormError('Vui lòng nhập tên hoặc mô tả nhiệm vụ.');
+      inputRef.current?.focus();
+      return;
+    }
 
     try {
+      setFormError(null);
       setIsSubmitting(true);
       await onAddTask({
-        title: title.trim(),
-        description: description.trim() || undefined,
+        ...taskText,
         priority,
         due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
         estimated_minutes: estimatedMinutes ? Number(estimatedMinutes) : undefined,
@@ -75,6 +85,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         status: 'todo',
       });
       onClose();
+    } catch {
+      setFormError('Không thể tạo nhiệm vụ. Vui lòng kiểm tra kết nối Backend và thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -136,12 +148,17 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-emerald-100 overflow-hidden z-10 animate-in zoom-in-95 duration-200">
-        <form onSubmit={handleSubmit}>
+      <div className="relative w-full max-w-xl bg-white rounded-lg shadow-xl border border-emerald-200 overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+        <form onSubmit={handleSubmit} onKeyDown={(event) => {
+          if (!(event.target instanceof HTMLButtonElement) && (event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            void handleSubmit();
+          }
+        }}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-xs">
+              <div className="w-8 h-8 rounded-md bg-emerald-600 flex items-center justify-center text-white shadow-xs">
                 <Plus className="w-4 h-4 stroke-[3]" />
               </div>
               <div>
@@ -152,7 +169,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-xl text-emerald-700/60 hover:text-emerald-900 hover:bg-emerald-100/60 transition-colors"
+              className="p-1.5 rounded-md text-emerald-700/60 hover:text-emerald-900 hover:bg-emerald-100/60 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -160,26 +177,44 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           <div className="p-6 space-y-4">
             {/* Title */}
-            <div>
+            <div className="space-y-1.5">
+              <label htmlFor="new-task-title" className="block text-[11px] font-bold uppercase tracking-wide text-emerald-800">
+                Tên nhiệm vụ
+              </label>
               <input
+                id="new-task-title"
                 ref={inputRef}
                 type="text"
+                maxLength={255}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Tiêu đề việc cần làm..."
-                className="w-full text-base sm:text-lg font-black text-emerald-950 placeholder-emerald-800/30 bg-transparent border-0 outline-none"
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder="Ví dụ: Hoàn thành báo cáo"
+                aria-invalid={Boolean(formError)}
+                aria-describedby={formError ? 'new-task-error' : undefined}
+                className={`w-full px-3 py-2.5 text-sm font-semibold text-emerald-950 placeholder-emerald-800/35 bg-white border rounded-md outline-none focus:ring-2 focus:ring-emerald-100 ${formError ? 'border-rose-400 focus:border-rose-500' : 'border-emerald-200 focus:border-emerald-600'}`}
               />
+              {formError && <p id="new-task-error" role="alert" className="text-xs text-rose-700">{formError}</p>}
+              <p className="text-[11px] text-emerald-800/60">Nếu chỉ nhập mô tả, dòng đầu sẽ được dùng làm tên nhiệm vụ.</p>
             </div>
 
             {/* Description */}
-            <div className="flex items-start gap-2 bg-emerald-50/40 border border-emerald-200/70 rounded-2xl p-3 focus-within:bg-white focus-within:border-emerald-500 transition-all">
-              <AlignLeft className="w-4 h-4 text-emerald-500 mt-1 shrink-0" />
+            <div className="space-y-1.5">
+              <label htmlFor="new-task-description" className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800">
+                <AlignLeft className="w-3.5 h-3.5" /> Mô tả <span className="font-normal normal-case text-emerald-700/70">(tùy chọn)</span>
+              </label>
               <textarea
+                id="new-task-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ghi chú chi tiết hoặc các bước thực hiện..."
-                rows={3}
-                className="w-full text-xs sm:text-sm text-emerald-950 placeholder-emerald-800/40 bg-transparent border-0 outline-none resize-none leading-relaxed font-medium"
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder="Thêm chi tiết nếu cần..."
+                rows={2}
+                className="w-full px-3 py-2.5 text-sm text-emerald-950 placeholder-emerald-800/40 bg-white border border-emerald-200 rounded-md outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 resize-y leading-relaxed"
               />
             </div>
 
@@ -197,7 +232,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                       key={item.value}
                       type="button"
                       onClick={() => setPriority(item.value)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold border transition-all ${
                         isSelected ? item.classActive : item.classInactive
                       }`}
                     >
@@ -221,7 +256,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   type="datetime-local"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl px-3 py-2 outline-none focus:bg-white focus:border-emerald-500"
+                  className="w-full text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
                 />
                 <div className="flex items-center gap-1.5 pt-1">
                   <button
@@ -265,7 +300,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                         setEstimatedMinutes(e.target.value ? Number(e.target.value) : '')
                       }
                       placeholder="vd: 25"
-                      className="w-24 text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl px-3 py-2 outline-none focus:bg-white focus:border-emerald-500"
+                      className="w-24 text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
                     />
                     <div className="flex items-center gap-1">
                       {[15, 25, 45].map((m) => (
@@ -290,7 +325,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   <select
                     value={recurrenceRule}
                     onChange={(e) => setRecurrenceRule(e.target.value as RecurrenceRule | '')}
-                    className="w-full text-xs font-semibold text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl px-2.5 py-2 outline-none focus:bg-white focus:border-emerald-500"
+                    className="w-full text-xs font-semibold text-emerald-950 bg-white border border-emerald-200 rounded-md px-2.5 py-2 outline-none focus:border-emerald-600"
                   >
                     <option value="">Không lặp lại</option>
                     <option value="daily">Mỗi ngày</option>
@@ -310,7 +345,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="rungxanh, duan, hoctap..."
-                    className="w-full text-xs font-medium text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl px-3 py-2 outline-none focus:bg-white focus:border-emerald-500"
+                    className="w-full text-xs font-medium text-emerald-950 bg-white border border-emerald-200 rounded-md px-3 py-2 outline-none focus:border-emerald-600"
                   />
                 </div>
               </div>
@@ -326,14 +361,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 rounded-xl hover:bg-emerald-100/60 transition-colors"
+                className="px-4 py-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 rounded-md hover:bg-emerald-100/60 transition-colors"
               >
                 Hủy bỏ
               </button>
               <button
                 type="submit"
-                disabled={!title.trim() || isSubmitting}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all disabled:opacity-50 disabled:pointer-events-none shadow-md shadow-emerald-700/20"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Thêm nhiệm vụ</span>

@@ -29,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
     overview: { title: 'Tổng quan OtterTodo', subtitle: 'Khu rừng công việc và tiến độ của bạn' },
     today: { title: 'Kế hoạch Hôm nay', subtitle: 'Tập trung vào những ưu tiên cần làm ngay' },
     timetable: { title: 'Thời gian biểu tuần', subtitle: 'Sắp xếp lịch trình trực quan theo từng khung giờ' },
+    'study-space': { title: 'Không gian học', subtitle: 'Bảng vẽ học tập và chế độ tập trung cùng Trợ lý Rái Cá' },
     tasks: { title: 'Tất cả công việc', subtitle: 'Danh sách và bảng quản lý nhiệm vụ' },
     projects: { title: 'Dự án đang thực hiện', subtitle: 'Tiến độ các dự án và mục tiêu lớn' },
     stats: { title: 'Thống kê & Năng suất', subtitle: 'Báo cáo thời gian và hiệu suất làm việc' },
